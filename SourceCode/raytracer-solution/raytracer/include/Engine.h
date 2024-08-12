@@ -15,21 +15,23 @@ public:
     /* @brief Load all scenes, and `tick`s them until GEndFrame */
     int runAllScenes();
     /* @brief Read scene file and prepare for `tick()` */
-    void loadScene(const std::string& filePath, const std::string& sceneName);
+    void loadScene(const std::filesystem::path& filePath);
     /* @brief Render the loaded scene from loadScene */
-    void tick();
+    void startTick();
+    static std::vector<Vec2<size_t>> diffImages(std::filesystem::path img1, std::filesystem::path img2);
 
 private:
     void writeFrame() const;
     void cleanFrame();
     void writeFile(const std::string& filename, const std::string& data) const;
+    std::vector<std::filesystem::path> getScenesToLoad() const;
 
     // Renderer output
     Image image{};
     /* Auxiliary output images. To be used for deferred shading, debugging, etc. */
     std::vector<Image> auxImages {};
 
-    const Settings& settings;
+    Settings settings;
     Scene scene{ "scene", &settings };
     Renderer renderer{ &settings, &scene, &image, &auxImages };
 };

@@ -22,7 +22,7 @@ namespace UnitTestData {
 
     void loadScene1(Scene& scene)
     {
-        scene.fileName = "scene1";
+        scene.sceneName = "scene1";
         scene.vertices = {
         {-1.75f, -1.75f, -3.f},
         {1.75f, -1.75f, -3.f},

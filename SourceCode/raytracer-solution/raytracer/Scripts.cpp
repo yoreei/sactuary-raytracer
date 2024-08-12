@@ -7,10 +7,10 @@ static float fps;
 static float duration;
 static float endFrame;
 void Scripts::onSceneLoaded(Scene& scene) {
-    if (scene.fileName == "day" ||
-        scene.fileName == "day2" ||
-        scene.fileName == "night" ||
-        scene.fileName == "night2")
+    if (scene.sceneName == "day" ||
+        scene.sceneName == "day2" ||
+        scene.sceneName == "night" ||
+        scene.sceneName == "night2")
     {
         // set start frame
         GFrameNumber = 0;
@@ -23,7 +23,7 @@ void Scripts::onSceneLoaded(Scene& scene) {
 }
 
 void Scripts::onTick(Scene& scene) {
-    if (scene.fileName == "day") {
+    if (scene.sceneName == "day") {
 
         // Parameters for the circular path
         float startAngle = PI / 4.f; // (radians)
@@ -44,7 +44,7 @@ void Scripts::onTick(Scene& scene) {
         scene.camera.pos = position;
         scene.camera.lookAt({ 0.f, 0.f, 0.f });
     }
-    if (scene.fileName == "day2") {
+    if (scene.sceneName == "day2") {
 
         // Parameters for the circular path
         float startAngle = PI; // (radians)
@@ -67,7 +67,7 @@ void Scripts::onTick(Scene& scene) {
     }
 
 
-    if (scene.fileName == "night") {
+    if (scene.sceneName == "night") {
         fps = 1; // Frames per second
         duration = 5.0f; // Duration of the animation in seconds
         endFrame = fps * duration;
@@ -99,7 +99,7 @@ void Scripts::onTick(Scene& scene) {
         scene.camera.lookAt({ 0.f, 0.f, 0.f });
     }
 
-    if (scene.fileName == "night2") {
+    if (scene.sceneName == "night2") {
         fps = 1; // Frames per second
         duration = 8.0f; // Duration of the animation in seconds
         endFrame = fps * duration;

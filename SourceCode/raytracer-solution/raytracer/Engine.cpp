@@ -31,13 +31,15 @@ void Engine::writeFile(const std::string& filename, const std::string& data) con
     ppmFileStream.close();
 }
 
-void Engine::tick()
+void Engine::startTick()
 {
-    std::string directory = settings.projectPath() + "/" + scene.fileName;
+    std::string directory = settings.projectPath() + "/" + scene.sceneName;
     fs::create_directories(directory);
 
     while (GFrameNumber <= GEndFrame) {
         std::cout << ">>> Frame: " << GFrameNumber << std::endl;
+        cleanFrame();
+
         Scripts::onTick(scene);
         scene.updateAnimations();
         renderer.render();
@@ -49,58 +51,67 @@ void Engine::tick()
         if (triInt < GBestTriangleIntersect) {
             GBestSettings = summedMetrics.dump(4);
         }
-
-        cleanFrame();
     }
 }
 
-void Engine::loadScene(const std::string& filePath, const std::string& sceneName) {
-    std::cout << ">> Loading scene: " << sceneName << std::endl;
+std::vector<Vec2<size_t>> Engine::diffImages(std::filesystem::path path1, std::filesystem::path path2)
+{
+    Image img1 = Image::FromBitmap(path1.string());
+    Image img2 = Image::FromBitmap(path2.string());
+    return img1.diff(img2);
+}
+
+void Engine::loadScene(const std::filesystem::path& filePath) {
+    std::cout << ">> Loading scene: " << filePath << std::endl;
+	GSceneMetrics.clear();
     GResetGlobals();
 
     GSceneMetrics.startTimer("loadScene");
 
-    scene.fileName = sceneName;
     CRTSceneLoader::loadCrtscene(settings, filePath, scene, image);
     Scripts::onSceneLoaded(scene);
-    std::cout << ">> Scene " << sceneName << " loaded\n";
+    std::cout << ">> Scene " << filePath << " loaded\n";
 
     GSceneMetrics.stopTimer("loadScene");
 }
 
 int Engine::runAllScenes()
 {
-    using path = std::filesystem::path;
-    using dir = std::filesystem::directory_entry;
-    std::vector<path> scenePaths = {};
+    std::vector<std::filesystem::path> scenePaths = getScenesToLoad();
 
-    if (settings.loadEntireProject()) {
-        for (const dir& entry : fs::directory_iterator(settings.sceneLibraryDir + "/" + settings.projectDir)) {
-            if (path ext = entry.path().extension(); ext == ".crtscene") {
-                scenePaths.push_back(entry.path());
-            }
-        }
-    }
-    else {
-        for (const std::string& sceneFile : settings.targetScenes) {
-            scenePaths.push_back(path(settings.sceneLibraryDir + "/" + settings.projectDir + "/" + sceneFile));
-        }
-    }
-
-    for (const auto& scenePath : scenePaths) {
-        std::string sceneName = scenePath.filename().string();
-        sceneName = sceneName.substr(0, sceneName.find(".crtscene"));
-        GSceneMetrics.clear();
-        loadScene(scenePath.string(), sceneName);
-        tick();
-
+    for (const std::filesystem::path& scenePath : scenePaths) {
+        loadScene(scenePath);
+        startTick();
     }
 
     return 0;
 }
 
+std::vector<std::filesystem::path> Engine::getScenesToLoad() const
+{
+    using path = std::filesystem::path;
+	std::vector<path> scenePaths{};
+    using dir = std::filesystem::directory_entry;
+
+    if (settings.loadEntireProject()) {
+        for (const dir& entry : fs::directory_iterator(settings.sceneLibraryDir + "/" + settings.projectDir)) {
+            const path scenePath = entry.path();
+            if (path ext = scenePath.extension(); ext == ".crtscene") {
+                scenePaths.push_back(scenePath);
+            }
+        }
+    }
+    else {
+        for (const std::string& scenePath : settings.targetScenes) {
+            path scenePathHelper = path(settings.sceneLibraryDir + "/" + settings.projectDir + "/" + scenePath);
+            scenePaths.push_back(scenePathHelper);
+        }
+    }
+    return scenePaths;
+}
+
 void Engine::writeFrame() const {
-    std::string framePathNoExt = settings.framePathNoExt(scene.fileName, GFrameNumber);
+    std::string framePathNoExt = settings.framePathNoExt(scene.sceneName, GFrameNumber);
     image.writeImage(framePathNoExt, settings.bWritePng, settings.bWriteBmp);
     for (size_t i = 0; i < auxImages.size(); i++) {
         auxImages[i].writeImage(framePathNoExt + "_depth_" + std::to_string(i), settings.bWritePng, settings.bWriteBmp);

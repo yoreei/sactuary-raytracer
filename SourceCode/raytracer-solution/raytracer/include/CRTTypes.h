@@ -8,6 +8,7 @@
 #include <cmath>
 #include <numbers>
 #include <string>
+#include <sstream>
 
 #include "json_fwd.h"
 
@@ -25,6 +26,19 @@ inline bool fEqual(float a, float b, float atol = epsilon) {
 inline bool fLower(float a, float b, float maxDiff = epsilon) {
     return a - b < -maxDiff;
 }
+
+template <typename T>
+class Vec2 {
+public:
+    T x = 0;
+    T y = 0;
+
+    std::string toString() const {
+		std::ostringstream oss;
+        oss << "{" << x << ", " << y << "}";
+        return oss.str();
+    }
+};
 
 /* @brief: Float Vector in R^3 */
 class Vec3 {
@@ -200,6 +214,12 @@ inline Vec3 lerp(const Vec3& a, const Vec3& b, float t) {
 Vec3 slerp(const Vec3& vec0Ref, const Vec3& vec1, float t);
 
 inline std::ostream& operator<<(std::ostream& os, const Vec3& vec) {
+    os << vec.toString();
+    return os;
+}
+
+template <typename T>
+inline std::ostream& operator<<(std::ostream& os, const Vec2<T>& vec) {
     os << vec.toString();
     return os;
 }
@@ -465,6 +485,24 @@ struct Color
         return fromUnit(vec.x, vec.y, vec.z);
     }
 
+    Color operator-(const Color& other) const {
+        Color diff{};
+        diff.r = r - other.r;
+        diff.g = g - other.g;
+        diff.b = b - other.b;
+        return diff;
+    }
+
+    bool operator==(const Color& other) const {
+        return
+            r == other.r &&
+            g == other.g &&
+            b == other.b;
+    }
+
+    bool operator!=(const Color& other) const {
+        return !((*this) == other);
+    }
 };
 
 inline std::ostream& operator<<(std::ostream& os, const Color& color) {

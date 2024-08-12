@@ -33,6 +33,8 @@ public:
     auto getHeight() const { return height; }
     auto getAspectRatio() const { return aspectRatio; }
 
+    static Image FromBitmap(std::string filePath);
+
     Color& operator()(size_t x, size_t y)
     {
         if (x >= width || y >= height) throw std::out_of_range("Image::operator(): Index out of range");
@@ -44,6 +46,8 @@ public:
         if (x >= width || y >= height) throw std::out_of_range("Image::operator(): Index out of range");
         else return data[y * width + x];
     }
+
+    std::vector<Vec2<size_t>> diff(const Image& other) const;
 
     Image(Image&&) = default;
     Image& operator=(Image&&) = default;
@@ -63,4 +67,6 @@ private:
     size_t width;
     size_t height;
     float aspectRatio;
+
+    Vec2<size_t> linearToXY(size_t linearIdx) const;
 };

@@ -39,14 +39,14 @@ namespace RendererIntegrationTests {
             renderer.renderScene(scene, image);
 
             if (fs::exists("ref/")) {
-                std::string sRef = loadFile("ref/" + scene.fileName+ ".ppm");
+                std::string sRef = loadFile("ref/" + scene.sceneName+ ".ppm");
                 std::string sOut = image.toPpmString();
                 assert(sRef == sOut);
             }
             else {
                 std::cout << "Reference image directory not found. Generating new references." << std::endl;
                 fs::create_directories("ref/");
-                image.writeToPpm("ref/" + scene.fileName + ".ppm");
+                image.writeToPpm("ref/" + scene.sceneName + ".ppm");
             }
         }
     }

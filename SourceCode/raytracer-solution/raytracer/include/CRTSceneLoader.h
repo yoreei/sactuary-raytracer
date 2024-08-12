@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include <vector>
+#include <filesystem>
 
 #include "json.hpp"
 
@@ -15,7 +16,7 @@ using json = nlohmann::json;
 class CRTSceneLoader
 {
 public:
-    static void loadCrtscene(const Settings& settings, const std::string& filename, Scene& scene, Image& image);
+    static void loadCrtscene(const Settings& settings, const std::filesystem::path& filePath, Scene& scene, Image& image);
 private:
     static void parseLight(const json& j, Scene& scene);
     static void parseSettings(const json& j, Scene& scene, const Settings& settings);
@@ -42,7 +43,6 @@ private:
     static void assignIfExists(const json& j, std::string key, T& out);
     template <>
     void assignIfExists<Vec3>(const json& j, std::string key, Vec3& out);
-    static void loadBitmap(std::string filePath, Image& bitmap);
     /* Handy for debugging normals generation */
     static void debugPrintNormals(const Scene& scene);
 };

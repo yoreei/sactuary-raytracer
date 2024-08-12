@@ -4,7 +4,6 @@
 
 #include <memory>
 #include "json.hpp"
-#include "stb_image.h"
 
 #include "include/CRTSceneLoader.h"
 #include "include/Scene.h"
@@ -16,17 +15,19 @@
 
 using json = nlohmann::json;
 
-void CRTSceneLoader::loadCrtscene(const Settings& settings, const std::string& filePath, Scene& scene, Image& image) {
-    // Ensure Scene is clean:
-    scene = Scene{scene.fileName, &settings};
+void CRTSceneLoader::loadCrtscene(const Settings& settings, const std::filesystem::path& filePath, Scene& scene, Image& image) {
+    // Create a clean scene:
+    std::string sceneName = filePath.filename().string();
+    scene = Scene{sceneName, &settings};
 
-    std::ifstream file(filePath);
-    if (!file) { throw std::runtime_error("Failed to load CRTScene file: " + filePath); }
+    std::string filePathStr = filePath.string();
+    std::ifstream file(filePathStr);
+    if (!file) { throw std::runtime_error("Failed to load CRTScene file: " + filePathStr); }
 
     json j;
     file >> j;
 
-    std::cout << "Loading Scene: " << filePath << std::endl;
+    std::cout << "Loading Scene: " << filePathStr << std::endl;
 
     parseSettings(j, scene, settings);
     parseImageSettings(j, image, settings);
@@ -81,12 +82,12 @@ void CRTSceneLoader::parseSettings(const json& j, Scene& scene, const Settings& 
     if (jSettings.contains("skybox")) {
         std::string skybox = jSettings.at("skybox");
         scene.useSkybox = true;
-        loadBitmap(settings.sceneLibraryDir + "/skybox/" + skybox + "/0001.png", scene.skybox.images[0]);
-        loadBitmap(settings.sceneLibraryDir + "/skybox/" + skybox + "/0002.png", scene.skybox.images[1]);
-        loadBitmap(settings.sceneLibraryDir + "/skybox/" + skybox + "/0003.png", scene.skybox.images[2]);
-        loadBitmap(settings.sceneLibraryDir + "/skybox/" + skybox + "/0004.png", scene.skybox.images[3]);
-        loadBitmap(settings.sceneLibraryDir + "/skybox/" + skybox + "/0005.png", scene.skybox.images[4]);
-        loadBitmap(settings.sceneLibraryDir + "/skybox/" + skybox + "/0006.png", scene.skybox.images[5]);
+        scene.skybox.images[0] = Image::FromBitmap(settings.sceneLibraryDir + "/skybox/" + skybox + "/0001.png");
+        scene.skybox.images[1] = Image::FromBitmap(settings.sceneLibraryDir + "/skybox/" + skybox + "/0002.png");
+        scene.skybox.images[2] = Image::FromBitmap(settings.sceneLibraryDir + "/skybox/" + skybox + "/0003.png");
+        scene.skybox.images[3] = Image::FromBitmap(settings.sceneLibraryDir + "/skybox/" + skybox + "/0004.png");
+        scene.skybox.images[4] = Image::FromBitmap(settings.sceneLibraryDir + "/skybox/" + skybox + "/0005.png");
+        scene.skybox.images[5] = Image::FromBitmap(settings.sceneLibraryDir + "/skybox/" + skybox + "/0006.png");
     }
 
     if (scene.useSkybox) scene.ambientLightColor = scene.skybox.calculateAmbientColor();
@@ -160,7 +161,7 @@ void CRTSceneLoader::parseTextures(const json& j, Scene& scene, const Settings& 
         tex.filePath = settings.sceneLibraryDir + "/" + settings.projectDir + "/" + tex.filePath;
 
         if (type == TextureType::BITMAP) {
-            loadBitmap(tex.filePath, tex.bitmap);
+            tex.bitmap = Image::FromBitmap(tex.filePath);
         }
 
         idxFromTextureName[name] = i;
@@ -311,37 +312,6 @@ void CRTSceneLoader::warnIfMissing(const json& j, const std::string& key) {
     if (!j.contains(key)) {
         std::cerr << "CRTSceneLoader::warnIfMissing: key " << key << " not found\n";
     }
-}
-
-void CRTSceneLoader::loadBitmap(std::string filePath, Image& bitmap)
-{
-    std::ifstream file(filePath);
-    if (!file) {
-        throw std::runtime_error("Failed to load image");
-    }
-
-    int width, height, channels;
-    int ok = stbi_info(filePath.c_str(), &width, &height, &channels);
-    if (ok != 1) {
-        throw std::runtime_error("Failed to load image: " + std::string(stbi_failure_reason()));
-    }
-    Image img{ size_t(width), size_t(height) };
-
-    unsigned char* stbi_ptr = stbi_load(filePath.c_str(), &width, &height, &channels, 0);
-    if (stbi_ptr == nullptr || channels < 3 || channels > 4) {
-        throw std::runtime_error("Failed to load image: " + std::string(stbi_failure_reason()));
-    }
-
-    for (size_t i = 0; i < width * height; ++i)
-    {
-        img.data[i].r = stbi_ptr[i * channels];
-        img.data[i].g = stbi_ptr[i * channels + 1];
-        img.data[i].b = stbi_ptr[i * channels + 2];
-    }
-
-    stbi_image_free(stbi_ptr);
-
-    bitmap = std::move(img);
 }
 
 void CRTSceneLoader::debugPrintNormals(const Scene& scene)

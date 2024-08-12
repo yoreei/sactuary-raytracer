@@ -5,6 +5,7 @@
 #pragma once
 #include <string>
 #include <vector>
+#include <filesystem>
 
 class Settings {
 public:
@@ -16,6 +17,7 @@ public:
     std::string projectDir = "hw13";
     std::vector<std::string> targetScenes {"scene0.crtscene"};
     std::string outputDir = "out";
+    std::string compareDir = "compare";
 
     // Rendering settings
     size_t maxDepth = 16;
@@ -59,4 +61,6 @@ public:
     std::string iterationPathNoExt() const;
     std::string framePathNoExt(const std::string& sceneName, size_t frameNumber) const;
     bool loadEntireProject() const;
+    std::vector<std::filesystem::path> getOutputFiles() const;
+    std::filesystem::path getCompareFile(std::filesystem::path file) const;
 };

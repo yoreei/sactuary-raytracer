@@ -1,7 +1,7 @@
 {
     "sceneLibraryDir": "sceneLibrary",
     "projectDir": "hw14",
-    "targetScenes": [],
+    "targetScenes": ["scene0.crtscene"],
     "outputDir": "out",
     
     "maxDepth": 6,

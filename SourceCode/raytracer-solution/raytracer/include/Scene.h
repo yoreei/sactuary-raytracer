@@ -26,7 +26,7 @@ class TraceHit;
 class Scene
 {
 public:
-    Scene(const std::string& name, const Settings* settings) : fileName(name), settings(settings) {}
+    Scene(const std::string& name, const Settings* settings) : sceneName(name), settings(settings) {}
 
     Scene(Scene&&) noexcept = default;
     Scene& operator=(Scene&&) noexcept = default;
@@ -35,7 +35,7 @@ public:
     Scene& operator=(const Scene&) = delete;
 
     // Properties
-    std::string fileName = "";
+    std::string sceneName = "";
     Camera camera{};
     const Settings* settings;
     Cubemap skybox{};

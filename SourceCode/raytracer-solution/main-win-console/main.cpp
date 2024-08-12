@@ -1,6 +1,7 @@
 /* Main entry for Windows console. Reads settings and starts the engine */
 #include <iostream>
 #include <fstream>
+#include <filesystem>
 
 #include "include/Engine.h"
 #include "include/Settings.h"
@@ -15,7 +16,7 @@ void logSettingsIteration(const Settings& settings) {
 }
 
 /* @brief Add extra parameters */
-void addSettingsPermutations(std::vector<Settings>& settingsList)
+void addBenchmarkingPermutations(std::vector<Settings>& settingsList)
 {
     settingsList.back().accelTreeMaxDepth = 2;
     settingsList.back().maxTrianglesPerLeaf = 2;
@@ -32,18 +33,49 @@ void addSettingsPermutations(std::vector<Settings>& settingsList)
     }
 }
 
+
+void compare(const Settings& settings)
+{
+    namespace fs = std::filesystem;
+    using path = fs::path;
+    std::cout << "-- Comparing Output --\n";
+
+    std::vector<path> outputFiles = settings.getOutputFiles();
+    for (const path& outputFile : outputFiles) {
+        path compareFile = settings.getCompareFile(outputFile);
+        if (fs::exists(compareFile)) {
+            std::vector<Vec2<size_t>> diffs = Engine::diffImages(outputFile, compareFile);
+
+			bool match = true;
+            std::cout << "comparing " << outputFile << " and " << compareFile << std::endl;
+			for (const auto& diff : diffs) {
+				std::cout << "found diff: " << diff << std::endl;
+				match = false;
+			}
+			if (match) {
+                std::cout << "both files match\n";
+			}
+        }
+        else {
+            std::cout << outputFile << " has no corresponding compare file: " << compareFile.string() << "; skipping" << std::endl;
+        }
+    }
+}
+
 /* @brief Read settings and launch engine */
 int launch()
 {
     std::vector<Settings> settingsList = { Settings::load("settings.json") };
-    // addSettingsPermutations(settingsList); // uncomment for benchmarking
+    // addBenchmarkingPermutations(settingsList); // uncomment for benchmarking
 
     for (Settings& settings : settingsList) {
         std::cout << "Running iteration " << settings.iterationName() << std::endl;
         logSettingsIteration(settings);
         Engine engine{ settings };
-        engine.runAllScenes();
+		engine.runAllScenes();
+		compare(settings);
     }
+
 
     if (settingsList.size() > 1) {
         std::cout << "\n\n\nGBestSettings:\n\n\n";

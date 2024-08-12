@@ -1,7 +1,23 @@
 #include "include/Image.h"
+
+#include "stb_image.h"
+
 #include <fstream>
 
-inline void Image::writeToPpm(const std::string& filename)
+std::vector<Vec2<size_t>> Image::diff(const Image& other) const
+{
+    std::vector<Vec2<size_t>> diffVec{};
+    if (getWidth() != other.getWidth() || getHeight() != other.getHeight()) { throw std::invalid_argument("image dimensions must match"); }
+    for (size_t i = 0; i < getWidth() * getHeight(); ++i) {
+        if (data[i] - other.data[i] != Color{ 0, 0, 0 }) {
+            diffVec.emplace_back(linearToXY(i));
+        }
+    }
+
+    return diffVec;
+}
+
+void Image::writeToPpm(const std::string& filename)
 {
     std::ofstream ppmFileStream(filename, std::ios::out | std::ios::binary);
     if (!ppmFileStream.is_open()) {
@@ -76,3 +92,44 @@ void Image::writeImage(std::string filename, bool writePng, bool writeBmp) const
     }
 
 }
+
+Vec2<size_t> Image::linearToXY(size_t linearIdx) const
+{
+    if (linearIdx >= width * height) {
+        throw std::out_of_range("linearIdx is out of bounds");
+    }
+
+    return Vec2<size_t>(linearIdx % width, linearIdx / width);
+}
+
+Image Image::FromBitmap(std::string filePath)
+{
+    std::ifstream file(filePath);
+    if (!file) {
+        throw std::runtime_error("Failed to load image");
+    }
+
+    int width, height, channels;
+    int ok = stbi_info(filePath.c_str(), &width, &height, &channels);
+    if (ok != 1) {
+        throw std::runtime_error("Failed to load image: " + std::string(stbi_failure_reason()));
+    }
+    Image img{ size_t(width), size_t(height) };
+
+    unsigned char* stbi_ptr = stbi_load(filePath.c_str(), &width, &height, &channels, 0);
+    if (stbi_ptr == nullptr || channels < 3 || channels > 4) {
+        throw std::runtime_error("Failed to load image: " + std::string(stbi_failure_reason()));
+    }
+
+    for (size_t i = 0; i < width * height; ++i)
+    {
+        img.data[i].r = stbi_ptr[i * channels];
+        img.data[i].g = stbi_ptr[i * channels + 1];
+        img.data[i].b = stbi_ptr[i * channels + 2];
+    }
+
+    stbi_image_free(stbi_ptr);
+
+    return img;
+}
+

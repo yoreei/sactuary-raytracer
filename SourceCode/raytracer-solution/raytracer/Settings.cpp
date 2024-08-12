@@ -84,6 +84,45 @@ bool Settings::loadEntireProject() const
     return targetScenes.empty();
 }
 
+std::vector<std::filesystem::path> Settings::getOutputFiles() const
+{
+	std::vector<std::filesystem::path> pngFiles;
+
+	for (const auto& entry : std::filesystem::recursive_directory_iterator(outputDir)) {
+		if (entry.is_regular_file() && entry.path().extension() == ".png") {
+			pngFiles.push_back(entry.path());
+		}
+	}
+
+    return pngFiles;
+}
+
+std::filesystem::path Settings::getCompareFile(std::filesystem::path file) const
+{
+    std::filesystem::path relativePath;
+
+    auto it = file.begin();
+
+    if (file.has_root_path()) {
+        ++it; // Skip root ("C:\" on Windows or "/" on Unix)
+    }
+
+    // Skip outputDir
+    if (it != file.end()) {
+        if ((*it).string() != outputDir) { throw std::runtime_error("unexpected path structure"); }
+        ++it;
+    }
+
+    // Rebuild the remaining path
+    for (; it != file.end(); ++it) {
+        relativePath /= *it;
+    }
+
+    std::filesystem::path compareFilePath = compareDir / relativePath;
+
+    return compareFilePath;
+}
+
 std::string Settings::iterationPathNoExt() const {
     return outputDir + "/" + iterationName();
 }
