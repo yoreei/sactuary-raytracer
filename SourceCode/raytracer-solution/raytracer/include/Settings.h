@@ -7,6 +7,15 @@
 #include <vector>
 #include <filesystem>
 
+class ImageSettings {
+public:
+    size_t startX = 0;
+    size_t endX = 0;
+    size_t startY = 0;
+    size_t endY = 0;
+    size_t bucketSize = 20;
+};
+
 class Settings {
 public:
     // Unique ID for each render iteration. Not read from file
@@ -18,6 +27,10 @@ public:
     std::vector<std::string> targetScenes {"scene0.crtscene"};
     std::string outputDir = "out";
     std::string compareDir = "compare";
+    bool pruneInvisible = false;
+
+    // Filled in during Scene loading
+    ImageSettings imageSettings{};
 
     // Rendering settings
     size_t maxDepth = 16;
@@ -29,7 +42,6 @@ public:
     size_t debugPixelY = 0;
 
     bool debugLight = false;
-    bool enableShadingSamples = false;
     bool debugAccelStructure = false;
     bool showAabbs = false;
 

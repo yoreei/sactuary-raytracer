@@ -7,7 +7,7 @@
 #include "include/Triangle.h"
 #include "include/Material.h"
 #include "include/CRTTypes.h"
-#include "include/CRTSceneLoader.h"
+#include "include/CRTSceneIO.h"
 #include "include/Light.h"
 #include "include/MeshObject.h"
 #include "include/Utils.h"

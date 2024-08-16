@@ -26,23 +26,23 @@ public:
     void lookAt(const Vec3& dest);
     nlohmann::ordered_json toJson() const;
     /* Adds ray to `queue` with direction (`x`, `y`) on the image plane */
-    void emplaceTask(const Image& image, size_t x, size_t y, std::queue<TraceTask>& queue) const;
+    void emplaceTask(size_t maxX, size_t maxY, size_t x, size_t y, std::queue<TraceTask>& queue) const;
 
 private:
     /* creates ray with direction (`x`, `y`) on the image plane */
-    Ray rayFromPixel(const Image& image, size_t x, size_t y) const;
+    Ray rayFromPixel(size_t maxX, size_t maxY, size_t x, size_t y) const;
 
     /* Normalized Device Coordinates From Raster Coordinates
     *  x, y [0, width] [0, height] -> x, y [0, 1.0] [0, 1.0]
     *  example: top left raster pixel (0,0) -> (0, 0)
     *  example: bottom right raster pixel (width, height) -> (1, 1) */
-    void ndcFromRaster(const Image& image, Vec3& coordinates) const;
+    void ndcFromRaster(size_t maxX, size_t maxY, Vec3& coordinates) const;
 
     /* Image Plane Coordinates From Normalized Device Coordinates
     *  returns image plane coordinates. Positive y is up, positive x is right
     *  example: top left NDC (0,0) -> (-1, 1)
     *  example: bottom right NDC (1,1) -> (1, -1) */
-    void imageFromNdc(const Image& image, Vec3& coordinates) const;
+    void imageFromNdc(size_t maxX, size_t maxY, Vec3& coordinates) const;
 
     float tanHalfFov = 1.f; // Field of view in degrees
 };

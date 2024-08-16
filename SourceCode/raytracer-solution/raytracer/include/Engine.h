@@ -11,6 +11,7 @@ class Scene;
 class Image;
 class Engine {
 public:
+    Engine() = delete;
     Engine(const Settings& settings) : settings(settings) {}
     /* @brief Load all scenes, and `tick`s them until GEndFrame */
     int runAllScenes();
@@ -24,14 +25,13 @@ private:
     void writeFrame() const;
     void cleanFrame();
     void writeFile(const std::string& filename, const std::string& data) const;
+    void handleOverrideSettings();
     std::vector<std::filesystem::path> getScenesToLoad() const;
 
     // Renderer output
-    Image image{};
-    /* Auxiliary output images. To be used for deferred shading, debugging, etc. */
-    std::vector<Image> auxImages {};
+    RendererOutput rendererOutput{ 0, 0, settings };
 
     Settings settings;
     Scene scene{ "scene", &settings };
-    Renderer renderer{ &settings, &scene, &image, &auxImages };
+    Renderer renderer{ &settings, &scene, rendererOutput};
 };

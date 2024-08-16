@@ -460,7 +460,7 @@ struct TraceTask {
     size_t pixelX{ 0 };
     size_t pixelY{ 0 };
     uint32_t depth{ 0 };
-    // [0, 1]. Higher values increase the weight of the diffuseComponent of the hit point when `lerp`ing.  See ShadingSamples::flatten
+    // [0, 1]. Higher values increase the weight of the diffuseComponent of the hit point when `lerp`ing.  See RendererOutput::flatten
     float weight{ 1.f };
     float ior{ 1.f };
 };

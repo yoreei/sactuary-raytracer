@@ -35,6 +35,7 @@ public:
     Scene& operator=(const Scene&) = delete;
 
     // Properties
+    size_t bucketSize = 20;
     std::string sceneName = "";
     Camera camera{};
     const Settings* settings;
@@ -77,6 +78,7 @@ public:
     bool getIsDirty() const { return isDirty; }
 
     void updateAnimations();
+
 private:
     KDTreeNode accelStruct{};
     bool isDirty = true; /* Scene is dirty if objects are added or removed */

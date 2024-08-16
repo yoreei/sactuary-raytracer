@@ -13,25 +13,13 @@ public:
     Image(size_t _width, size_t _height) :
         width(_width),
         height(_height),
-        aspectRatio(static_cast<float>(width) / static_cast<float>(height)),
-        data(_width* _height),
-        endPixelY(_height),
-        endPixelX(_width)
+        data(_width* _height)
     {}
     std::vector<Color> data;
-    // Number of pixels each thread will lock at once.
-    size_t bucketSize = 20;
-
-    /* startPixelY, startPixelX, endPixelY, endPixelX are used in conjunction with Settings::debugPixel
-       These allow us to shoot a single pixel in a complex scene in Debug mode for fast debuggin */
-    size_t startPixelY = 0;
-    size_t startPixelX = 0;
-    size_t endPixelY;
-    size_t endPixelX;
 
     auto getWidth() const { return width; }
     auto getHeight() const { return height; }
-    auto getAspectRatio() const { return aspectRatio; }
+    float getAspectRatio() const { return static_cast<float>(width) / static_cast<float>(height); }
 
     static Image FromBitmap(std::string filePath);
 
@@ -66,7 +54,7 @@ public:
 private:
     size_t width;
     size_t height;
-    float aspectRatio;
 
     Vec2<size_t> linearToXY(size_t linearIdx) const;
 };
+

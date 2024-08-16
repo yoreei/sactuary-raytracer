@@ -3,13 +3,13 @@
   <ItemGroup>
     <ClCompile Include="AABB.cpp" />
     <ClCompile Include="Camera.cpp" />
-    <ClCompile Include="CRTSceneLoader.cpp" />
+    <ClCompile Include="CRTSceneIO.cpp" />
     <ClCompile Include="CRTTypes.cpp" />
     <ClCompile Include="Cubemap.cpp" />
     <ClCompile Include="Globals.cpp" />
     <ClCompile Include="Image.cpp" />
     <ClCompile Include="Metrics.cpp" />
-    <ClCompile Include="ShadingSamples.cpp" />
+    <ClCompile Include="RendererOutput.cpp" />
     <ClCompile Include="KDTreeNode.cpp" />
     <ClCompile Include="MeshObject.cpp" />
     <ClCompile Include="SceneObject.cpp" />
@@ -38,7 +38,7 @@
     <ClInclude Include="include\Camera.h">
       <Filter>include</Filter>
     </ClInclude>
-    <ClInclude Include="include\CRTSceneLoader.h">
+    <ClInclude Include="include\CRTSceneIO.h">
       <Filter>include</Filter>
     </ClInclude>
     <ClInclude Include="include\CRTTypes.h">
@@ -83,7 +83,7 @@
     <ClInclude Include="include\Settings.h">
       <Filter>include</Filter>
     </ClInclude>
-    <ClInclude Include="include\ShadingSamples.h">
+    <ClInclude Include="include\RendererOutput.h">
       <Filter>include</Filter>
     </ClInclude>
     <ClInclude Include="include\Texture.h">

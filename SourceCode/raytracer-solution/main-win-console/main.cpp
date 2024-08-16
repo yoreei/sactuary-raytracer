@@ -66,6 +66,13 @@ void compare(const Settings& settings)
 int launch()
 {
     std::vector<Settings> settingsList = { Settings::load("settings.json") };
+
+#ifdef NDEBUG
+    if (settingsList.front().debugPixel) {
+        throw std::runtime_error("Turn on Debug to debug pixels");
+    }
+#endif
+
     // addBenchmarkingPermutations(settingsList); // uncomment for benchmarking
 
     for (Settings& settings : settingsList) {

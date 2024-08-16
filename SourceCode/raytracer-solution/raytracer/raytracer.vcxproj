@@ -205,7 +205,7 @@
     <ClCompile Include="..\third-party\stb_image_write.cpp" />
     <ClCompile Include="AABB.cpp" />
     <ClCompile Include="Camera.cpp" />
-    <ClCompile Include="CRTSceneLoader.cpp" />
+    <ClCompile Include="CRTSceneIO.cpp" />
     <ClCompile Include="CRTTypes.cpp" />
     <ClCompile Include="Cubemap.cpp" />
     <ClCompile Include="Globals.cpp" />
@@ -213,7 +213,7 @@
     <ClCompile Include="Metrics.cpp" />
     <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="Scripts.cpp" />
-    <ClCompile Include="ShadingSamples.cpp" />
+    <ClCompile Include="RendererOutput.cpp" />
     <ClCompile Include="KDTreeNode.cpp" />
     <ClCompile Include="MeshObject.cpp" />
     <ClCompile Include="SceneObject.cpp" />
@@ -236,7 +236,7 @@
     <ClInclude Include="include\AABB.h" />
     <ClInclude Include="include\AnimationComponent.h" />
     <ClInclude Include="include\Camera.h" />
-    <ClInclude Include="include\CRTSceneLoader.h" />
+    <ClInclude Include="include\CRTSceneIO.h" />
     <ClInclude Include="include\CRTTypes.h" />
     <ClInclude Include="include\Cubemap.h" />
     <ClInclude Include="include\Engine.h" />
@@ -252,7 +252,7 @@
     <ClInclude Include="include\SceneObject.h" />
     <ClInclude Include="include\Scripts.h" />
     <ClInclude Include="include\Settings.h" />
-    <ClInclude Include="include\ShadingSamples.h" />
+    <ClInclude Include="include\RendererOutput.h" />
     <ClInclude Include="include\Texture.h" />
     <ClInclude Include="include\TraceHit.h" />
     <ClInclude Include="include\Triangle.h" />

@@ -50,16 +50,16 @@ nlohmann::ordered_json Camera::toJson() const
     return j;
 }
 
-void Camera::emplaceTask(const Image& image, size_t x, size_t y, std::queue<TraceTask>& queue) const
+void Camera::emplaceTask(size_t maxX, size_t maxY, size_t x, size_t y, std::queue<TraceTask>& queue) const
 {
-    Ray ray = rayFromPixel(image, x, y);
+    Ray ray = rayFromPixel(maxX, maxY, x, y);
     queue.emplace(ray, x, y);
 }
 
-Ray Camera::rayFromPixel(const Image& image, size_t x, size_t y) const {
+Ray Camera::rayFromPixel(size_t maxX, size_t maxY, size_t x, size_t y) const {
     Vec3 coords{ static_cast<float>(x), static_cast<float>(y), 0 };
-    ndcFromRaster(image, coords);
-    imageFromNdc(image, coords);
+    ndcFromRaster(maxX, maxY, coords);
+    imageFromNdc(maxX, maxY, coords);
 
     coords.x *= tanHalfFov;
     coords.y *= tanHalfFov;
@@ -69,7 +69,7 @@ Ray Camera::rayFromPixel(const Image& image, size_t x, size_t y) const {
     return { this->pos, raydir };
 }
 
-void Camera::ndcFromRaster(const Image& image, Vec3& coordinates) const
+void Camera::ndcFromRaster(size_t maxX, size_t maxY, Vec3& coordinates) const
 {
     float& x = coordinates.x;
     float& y = coordinates.y;
@@ -78,11 +78,11 @@ void Camera::ndcFromRaster(const Image& image, Vec3& coordinates) const
     x += 0.5f;
     y += 0.5f;
 
-    x /= float(image.getWidth());
-    y /= float(image.getHeight());
+    x /= float(maxX);
+    y /= float(maxY);
 }
 
-void Camera::imageFromNdc(const Image& image, Vec3& coordinates) const
+void Camera::imageFromNdc(size_t maxX, size_t maxY, Vec3& coordinates) const
 {
     float& x = coordinates.x;
     float& y = coordinates.y;
@@ -96,6 +96,7 @@ void Camera::imageFromNdc(const Image& image, Vec3& coordinates) const
     x -= 1;
     y += 1;
 
-    x *= image.getAspectRatio();
+    float aspectRatio = (static_cast<float>(maxX) / static_cast<float>(maxY)); // TODO is calculated for every ray
+    x *= aspectRatio;
 }
 

@@ -8,27 +8,23 @@ void Renderer::render()
     // Prepare Primary Queue
     GSceneMetrics.startTimer(Timers::generateQueue);
 
-    size_t numPixels = image->getWidth() * image->getHeight();
-    if (numPixels % image->bucketSize != 0) throw std::invalid_argument("numBuckets must divide image size");
-    size_t numBuckets = numPixels / image->bucketSize;
+    size_t numPixels = rendererOutput.width * rendererOutput.height;
+    if (numPixels % scene->bucketSize != 0) throw std::invalid_argument("numBuckets must divide image size");
+    size_t numBuckets = numPixels / scene->bucketSize;
 
     queueBuckets.resize(numBuckets);
-    for (size_t y = image->startPixelY; y < image->endPixelY; ++y) {
-        for (size_t x = image->startPixelX; x < image->endPixelX; ++x) {
-            size_t bucketId = (y * image->getWidth() + x) / image->bucketSize;
+    for (size_t y = rendererOutput.startY; y < rendererOutput.endY; ++y) {
+        for (size_t x = rendererOutput.startX; x < rendererOutput.endX; ++x) {
+            size_t bucketId = (y * rendererOutput.width + x) % numBuckets;
             TraceQueue& queue = queueBuckets[bucketId];
-            scene->camera.emplaceTask(*image, x, y, queue);
+            scene->camera.emplaceTask(rendererOutput.width, rendererOutput.height, x, y, queue);
         }
     }
 
     GSceneMetrics.stopTimer(Timers::generateQueue);
-    shadingSamples = { image->getWidth(), image->getHeight(), settings };
-
     GSceneMetrics.startTimer(Timers::processQueue);
     launchBuckets();
     GSceneMetrics.stopTimer(Timers::processQueue);
-
-    flattenImage();
     GSceneMetrics.stopTimer(Timers::all);
 }
 
@@ -123,7 +119,7 @@ void Renderer::shadeSky(const TraceTask& task, const TraceHit& hit)
         skyColor = scene->skybox.sample(task.ray.getDirection());
     }
 
-    shadingSamples.addSample(task, skyColor);
+    rendererOutput.addSample(task, skyColor, hit);
 }
 
 void Renderer::shadeSkySimple(const TraceTask& task, const TraceHit& hit) {
@@ -135,7 +131,7 @@ void Renderer::shadeSkySimple(const TraceTask& task, const TraceHit& hit) {
     Vec3 skyColor = lerp(white, blue, t);
 
     if (task.weight > epsilon) {
-        shadingSamples.addSample(task, skyColor, BlendType::ADDITIVE);
+        rendererOutput.addSample(task, skyColor, hit, BlendType::ADDITIVE);
     }
 }
 
@@ -143,7 +139,7 @@ void Renderer::shadeConstant(TraceTask& task, const TraceHit& hit)
 {
     auto& material = scene->materials[hit.materialIndex];
     if (task.weight > epsilon) {
-        shadingSamples.addSample(task, material.getAlbedo(*scene, hit));
+        rendererOutput.addSample(task, material.getAlbedo(*scene, hit), hit);
     }
 }
 
@@ -162,7 +158,7 @@ void Renderer::shadeDiffuse(const TraceTask& task, const TraceHit& hit)
 
     Vec3 overexposedColor = multiply(light, albedo);
     Vec3 diffuseComponent = clampOverexposure(overexposedColor);
-    shadingSamples.addSample(task, diffuseComponent, BlendType::NORMAL);
+    rendererOutput.addSample(task, diffuseComponent, hit, BlendType::NORMAL);
 }
 
 void Renderer::shadeReflective(TraceTask& task, const TraceHit& hit, TraceQueue& traceQueue)
@@ -314,7 +310,7 @@ void Renderer::shadeBary(const TraceTask& task, const TraceHit& hit)
     assert(hit.baryU <= 1.f && hit.baryU >= 0);
     assert(hit.baryV <= 1.f && hit.baryV >= 0);
     Vec3 unitColor = { hit.baryU, 0.f, hit.baryV };
-    shadingSamples.addSample(task, unitColor);
+    rendererOutput.addSample(task, unitColor, hit);
 }
 
 void Renderer::shadeUv(const TraceTask& task, const TraceHit& hit)
@@ -322,25 +318,11 @@ void Renderer::shadeUv(const TraceTask& task, const TraceHit& hit)
     assert(hit.u <= 1.f && hit.u >= 0);
     assert(hit.v <= 1.f && hit.u >= 0);
     Vec3 unitColor = { hit.u, 0.f, hit.v };
-    shadingSamples.addSample(task, unitColor);
+    rendererOutput.addSample(task, unitColor, hit);
 }
 
 void Renderer::shadeNormal(TraceTask& task, const TraceHit& hit)
 {
     Vec3 unitColor = hit.n * 0.5f + Vec3{0.5f, 0.5f, 0.5f};
-    shadingSamples.addSample(task, unitColor);
-}
-
-void Renderer::flattenImage()
-{
-    if (settings->enableShadingSamples) {
-        ShadingSamples shadingSamplesCopy = shadingSamples;
-        shadingSamples.flatten(*image);
-        shadingSamplesCopy.slice(*auxImages);
-    }
-    else {
-        GSceneMetrics.startTimer(Timers::flatten);
-        shadingSamples.flatten(*image);
-        GSceneMetrics.stopTimer(Timers::flatten);
-    }
+    rendererOutput.addSample(task, unitColor, hit);
 }

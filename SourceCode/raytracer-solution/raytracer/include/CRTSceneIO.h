@@ -13,14 +13,15 @@ class Vec3;
 
 using json = nlohmann::json;
 
-class CRTSceneLoader
+class RendererOutput;
+class CRTSceneIO
 {
 public:
-    static void loadCrtscene(const Settings& settings, const std::filesystem::path& filePath, Scene& scene, Image& image);
+    static void loadCrtscene(const Settings& settings, const std::filesystem::path& filePath, Scene& scene, RendererOutput& rendererOutput);
 private:
     static void parseLight(const json& j, Scene& scene);
     static void parseSettings(const json& j, Scene& scene, const Settings& settings);
-    static void parseImageSettings(const json& j, Image& image, const Settings& settings);
+    static void parseImageSettings(const json& j, Scene& scene, RendererOutput& rendererOutput, const Settings& settings);
     static void parseCameraSettings(const json& j, Scene& scene);
     static void parseTextures(const json& j, Scene& scene, const Settings& settings, std::map<std::string, size_t>& idxFromTextureName);
     static void parseMaterials(const json& j, Scene& scene, const std::map<std::string, size_t>& idxFromTextureName);

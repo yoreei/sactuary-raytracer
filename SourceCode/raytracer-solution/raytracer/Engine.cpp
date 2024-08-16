@@ -16,7 +16,7 @@
 #include "include/Camera.h"
 #include "include/Scene.h"
 #include "include/Metrics.h"
-#include "include/CRTSceneLoader.h"
+#include "include/CRTSceneIO.h"
 #include "include/Renderer.h"
 #include "include/Settings.h"
 #include "include/Scripts.h"
@@ -29,6 +29,16 @@ void Engine::writeFile(const std::string& filename, const std::string& data) con
     std::ofstream ppmFileStream(filename, std::ios::out | std::ios::binary);
     ppmFileStream.write(data.c_str(), data.size());
     ppmFileStream.close();
+}
+
+void Engine::handleOverrideSettings()
+{
+    if (settings.debugPixel) {
+        rendererOutput.startX = settings.debugPixelX;
+        rendererOutput.startY = settings.debugPixelY;
+        rendererOutput.endX = settings.debugPixelX + 1;
+        rendererOutput.endY = settings.debugPixelY + 1;
+    }
 }
 
 void Engine::startTick()
@@ -68,7 +78,9 @@ void Engine::loadScene(const std::filesystem::path& filePath) {
 
     GSceneMetrics.startTimer("loadScene");
 
-    CRTSceneLoader::loadCrtscene(settings, filePath, scene, image);
+    CRTSceneIO::loadCrtscene(settings, filePath, scene, rendererOutput);
+    handleOverrideSettings();
+    rendererOutput.init();
     Scripts::onSceneLoaded(scene);
     std::cout << ">> Scene " << filePath << " loaded\n";
 
@@ -111,12 +123,18 @@ std::vector<std::filesystem::path> Engine::getScenesToLoad() const
 }
 
 void Engine::writeFrame() const {
+    // Write Flat Image
+    Image image = rendererOutput.getFlatImage();
     std::string framePathNoExt = settings.framePathNoExt(scene.sceneName, GFrameNumber);
     image.writeImage(framePathNoExt, settings.bWritePng, settings.bWriteBmp);
-    for (size_t i = 0; i < auxImages.size(); i++) {
-        auxImages[i].writeImage(framePathNoExt + "_depth_" + std::to_string(i), settings.bWritePng, settings.bWriteBmp);
+
+    // Write Depth Images
+    std::vector<Image> depthImages = rendererOutput.getDepthImages();
+    for (size_t i = 0; i < depthImages.size(); i++) {
+        depthImages[i].writeImage(framePathNoExt + "_depth_" + std::to_string(i), settings.bWritePng, settings.bWriteBmp);
     }
 
+    // Write Text Logs
     std::ofstream fileStream(framePathNoExt + ".log", std::ios::out);
     std::string metricsString = GSceneMetrics.toString();
     std::stringstream stream;
@@ -131,12 +149,15 @@ void Engine::writeFrame() const {
     std::string logStr = stream.str();
     std::cout << logStr;
     fileStream << logStr;
+
+    // Write Output Scene
+
 }
 
 
 void Engine::cleanFrame()
 {
-    auxImages.clear();
+    rendererOutput.init();
     GSceneMetrics.clear();
 }
 

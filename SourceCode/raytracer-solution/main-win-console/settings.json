@@ -1,15 +1,16 @@
 {
     "sceneLibraryDir": "sceneLibrary",
-    "projectDir": "hw14",
-    "targetScenes": ["scene0.crtscene"],
+    "projectDir": "hw11_refract",
+    "targetScenes": [],
     "outputDir": "out",
+    "pruneInvisible": true,
     
     "maxDepth": 6,
     "bias": 0.001,
     
     "debugPixel": false,
-    "debugPixelX": 0,
-    "debugPixelY": 0,
+    "debugPixelX": 170,
+    "debugPixelY": 170,
     
     "debugLight": false,
     "enableShadingSamples": false,
@@ -18,8 +19,8 @@
     "showAabbs": false,
     
     "overrideResolution": true,
-    "resolutionX": 800,
-    "resolutionY": 450,
+    "resolutionX": 300,
+    "resolutionY": 200,
     
     "bWritePng": true,
     "bWriteBmp": false,
@@ -27,5 +28,5 @@
     "forceNoAccelStructure": false,
     "forceSingleThreaded": false,
     "maxTrianglesPerLeaf": 4,
-    "accelTreeMaxDepth": 20
+    "accelTreeMaxDepth": 5
 }

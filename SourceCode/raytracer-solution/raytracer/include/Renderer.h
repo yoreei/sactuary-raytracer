@@ -13,7 +13,7 @@
 #include "include/Image.h"
 #include "include/Scene.h"
 #include "include/Triangle.h"
-#include "include/ShadingSamples.h"
+#include "include/RendererOutput.h"
 
 
 class TraceHit;
@@ -29,20 +29,20 @@ public:
 private:
     // TODO perf: reserve space for the queue
     using TraceQueue = std::queue<TraceTask>;
-    ShadingSamples shadingSamples{ 0, 0, settings };
     std::vector<TraceQueue> queueBuckets {};
+    
+    // Renderer Output:
+    RendererOutput& rendererOutput;
 
     // Dependencies
     const Scene* scene;
     const Settings* settings;
-    Image* image;
-    std::vector<Image>* auxImages;
 public:
-    Renderer(const Settings* settings, const Scene* scene, Image* image, std::vector<Image>* auxImages) :
+    Renderer(const Settings* settings, const Scene* scene, RendererOutput& rendererOutput) :
         settings(settings),
         scene(scene),
-        image(image),
-        auxImages(auxImages) { }
+        rendererOutput(rendererOutput)
+        { }
 
     /*
     * @parameter imageComponents: depth slices of the image, useful for debugging
@@ -99,8 +99,6 @@ private:
     void shadeUv(const TraceTask& task, const TraceHit& hit);
 
     void shadeNormal(TraceTask& task, const TraceHit& hit);
-
-    void flattenImage();
 
     /* hw3. For debugging camera Ray generation */
     Color traceImagePlane(const Ray& ray) const;

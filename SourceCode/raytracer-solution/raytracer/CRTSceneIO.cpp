@@ -5,17 +5,19 @@
 #include <memory>
 #include "json.hpp"
 
-#include "include/CRTSceneLoader.h"
+#include "include/CRTSceneIO.h"
 #include "include/Scene.h"
 #include "include/Image.h"
 #include "include/Material.h"
 #include "include/Texture.h"
 #include "include/Settings.h"
 #include "include/Utils.h"
+#include "include/RendererOutput.h"
 
 using json = nlohmann::json;
 
-void CRTSceneLoader::loadCrtscene(const Settings& settings, const std::filesystem::path& filePath, Scene& scene, Image& image) {
+void CRTSceneIO::loadCrtscene(const Settings& settings, const std::filesystem::path& filePath, Scene& scene, RendererOutput& rendererOutput)
+{
     // Create a clean scene:
     std::string sceneName = filePath.filename().string();
     scene = Scene{sceneName, &settings};
@@ -30,7 +32,7 @@ void CRTSceneLoader::loadCrtscene(const Settings& settings, const std::filesyste
     std::cout << "Loading Scene: " << filePathStr << std::endl;
 
     parseSettings(j, scene, settings);
-    parseImageSettings(j, image, settings);
+    parseImageSettings(j, scene, rendererOutput, settings);
     parseCameraSettings(j, scene);
 
     std::map<std::string, size_t> idxFromTextureName;
@@ -43,7 +45,7 @@ void CRTSceneLoader::loadCrtscene(const Settings& settings, const std::filesyste
     scene.build();
 }
 
-void CRTSceneLoader::parseLight(const json& j, Scene& scene)
+void CRTSceneIO::parseLight(const json& j, Scene& scene)
 {
     warnIfMissing(j, "lights");
     if (!j.contains("lights")) { return; }
@@ -74,7 +76,7 @@ void CRTSceneLoader::parseLight(const json& j, Scene& scene)
     }
 }
 
-void CRTSceneLoader::parseSettings(const json& j, Scene& scene, const Settings& settings) {
+void CRTSceneIO::parseSettings(const json& j, Scene& scene, const Settings& settings) {
     const auto& jSettings = j.at("settings");
     const auto& jBgColor = jSettings.at("background_color");
     scene.bgColor = Vec3{ jBgColor[0], jBgColor[1], jBgColor[2] };
@@ -94,38 +96,35 @@ void CRTSceneLoader::parseSettings(const json& j, Scene& scene, const Settings& 
     else { scene.ambientLightColor = scene.bgColor; }
 }
 
-void CRTSceneLoader::parseImageSettings(const json& j, Image& image, const Settings& settings) {
+void CRTSceneIO::parseImageSettings(const json& j, Scene& scene, RendererOutput& rendererOutput, const Settings& settings)
+{
     const auto& jImgSettings = j.at("settings").at("image_settings");
 
+	size_t width = jImgSettings.at("width").get<size_t>();
+	size_t height = jImgSettings.at("height").get<size_t>();
+
+	rendererOutput.endX = width;
+	rendererOutput.endY = height;
+	rendererOutput.width = width;
+	rendererOutput.height = height;
     if (settings.overrideResolution) {
-        image = Image{ settings.resolutionX, settings.resolutionY };
-    }
-    else {
-        size_t width = jImgSettings.at("width").get<size_t>();
-        size_t height = jImgSettings.at("height").get<size_t>();
-
-        image = Image{ width, height };
-    }
-
-    if (settings.debugPixel) {
-        // Narrow down the pixel to debug
-        image.startPixelY = settings.debugPixelY;
-        image.endPixelY = settings.debugPixelY + 1;
-        image.startPixelX = settings.debugPixelX;
-        image.endPixelX = settings.debugPixelX + 1;
+        rendererOutput.endX = settings.resolutionX;
+		rendererOutput.endY = settings.resolutionY;
+        rendererOutput.width = settings.resolutionX;
+        rendererOutput.height = settings.resolutionY;
     }
 
     if (jImgSettings.contains("bucket_size")) {
-        image.bucketSize = jImgSettings.at("bucket_size").get<size_t>();
+        scene.bucketSize = jImgSettings.at("bucket_size").get<size_t>();
     }
 
     if (settings.forceSingleThreaded || settings.debugPixel) {
-        image.bucketSize = image.getWidth() * image.getHeight();
+        scene.bucketSize = rendererOutput.width * rendererOutput.height;
     }
 
 }
 
-void CRTSceneLoader::parseCameraSettings(const json& j, Scene& scene) {
+void CRTSceneIO::parseCameraSettings(const json& j, Scene& scene) {
     const auto& jCam = j.at("camera");
     const auto& jCamPos = jCam.at("position");
     Vec3 camPos{ jCamPos.at(0), jCamPos.at(1), jCamPos.at(2) };
@@ -138,7 +137,7 @@ void CRTSceneLoader::parseCameraSettings(const json& j, Scene& scene) {
     scene.camera = Camera{ 90.f, camPos, camMat };
 }
 
-void CRTSceneLoader::parseTextures(const json& j, Scene& scene, const Settings& settings, std::map<std::string, size_t>& idxFromTextureName)
+void CRTSceneIO::parseTextures(const json& j, Scene& scene, const Settings& settings, std::map<std::string, size_t>& idxFromTextureName)
 {
     if (!j.contains("textures")) { return; }
 
@@ -169,7 +168,7 @@ void CRTSceneLoader::parseTextures(const json& j, Scene& scene, const Settings& 
     }
 }
 
-void CRTSceneLoader::parseMaterials(const json& j, Scene& scene, const std::map<std::string, size_t>& idxFromTextureName) {
+void CRTSceneIO::parseMaterials(const json& j, Scene& scene, const std::map<std::string, size_t>& idxFromTextureName) {
     warnIfMissing(j, "materials");
     if (!j.contains("materials")) {
         scene.materials.push_back(Material{});
@@ -211,11 +210,11 @@ void CRTSceneLoader::parseMaterials(const json& j, Scene& scene, const std::map<
     }
 }
 
-Vec3 CRTSceneLoader::Vec3FromJson(const json& j) {
+Vec3 CRTSceneIO::Vec3FromJson(const json& j) {
     return Vec3{ j[0], j[1], j[2] };
 }
 
-void CRTSceneLoader::parseObjects(const json& j, Scene& scene) {
+void CRTSceneIO::parseObjects(const json& j, Scene& scene) {
     const auto& jObjects = j.at("objects");
     for (const auto& jObj : jObjects) {
         std::vector<Vec3> vertices;
@@ -239,7 +238,7 @@ void CRTSceneLoader::parseObjects(const json& j, Scene& scene) {
     }
 }
 
-void CRTSceneLoader::calculateVertexNormals(const std::vector<Vec3>& vertices, const std::vector<Triangle>& triangles, std::vector<Vec3>& vertexNormals) {
+void CRTSceneIO::calculateVertexNormals(const std::vector<Vec3>& vertices, const std::vector<Triangle>& triangles, std::vector<Vec3>& vertexNormals) {
     // Vec3{0.f, 0.f, 0.f} is important for summation
     vertexNormals.resize(vertices.size(), Vec3{ 0.f, 0.f, 0.f });
     for (size_t i = 0; i < vertices.size(); ++i) {
@@ -257,7 +256,7 @@ void CRTSceneLoader::calculateVertexNormals(const std::vector<Vec3>& vertices, c
 
 }
 
-void CRTSceneLoader::genAttachedTriangles(const size_t vertexIndex, const std::vector<Triangle>& triangles, std::vector<size_t>& attachedTriangles) {
+void CRTSceneIO::genAttachedTriangles(const size_t vertexIndex, const std::vector<Triangle>& triangles, std::vector<size_t>& attachedTriangles) {
     for (size_t i = 0; i < triangles.size(); ++i) {
         const Triangle& tri = triangles[i];
         if (tri.hasVertex(vertexIndex)) {
@@ -266,7 +265,7 @@ void CRTSceneLoader::genAttachedTriangles(const size_t vertexIndex, const std::v
     }
 }
 
-void CRTSceneLoader::parseVertices(const json& jObj, std::vector<Vec3>& vertices) {
+void CRTSceneIO::parseVertices(const json& jObj, std::vector<Vec3>& vertices) {
     const auto& jVertices = jObj.at("vertices");
 
     if (!jVertices.is_array() || jVertices.size() % 3 != 0) {
@@ -281,7 +280,7 @@ void CRTSceneLoader::parseVertices(const json& jObj, std::vector<Vec3>& vertices
     }
 }
 
-void CRTSceneLoader::parseUvs(const json& jObj, const size_t expectedSize, std::vector<Vec3>& uvs)
+void CRTSceneIO::parseUvs(const json& jObj, const size_t expectedSize, std::vector<Vec3>& uvs)
 {
     if (jObj.contains("uvs")) {
         const auto& jUvs = jObj.at("uvs");
@@ -300,7 +299,7 @@ void CRTSceneLoader::parseUvs(const json& jObj, const size_t expectedSize, std::
     assert(uvs.size() == expectedSize);
 }
 
-void CRTSceneLoader::parseTriangles(const json& jObj, const std::vector<Vec3>& vertices, const size_t materialIdx, std::vector<Triangle>& triangles) {
+void CRTSceneIO::parseTriangles(const json& jObj, const std::vector<Vec3>& vertices, const size_t materialIdx, std::vector<Triangle>& triangles) {
 
     const auto& jTriangles = jObj.at("triangles");
     for (size_t i = 0; i < jTriangles.size(); i += 3) {
@@ -308,13 +307,13 @@ void CRTSceneLoader::parseTriangles(const json& jObj, const std::vector<Vec3>& v
     }
 }
 
-void CRTSceneLoader::warnIfMissing(const json& j, const std::string& key) {
+void CRTSceneIO::warnIfMissing(const json& j, const std::string& key) {
     if (!j.contains(key)) {
-        std::cerr << "CRTSceneLoader::warnIfMissing: key " << key << " not found\n";
+        std::cerr << "CRTSceneIO::warnIfMissing: key " << key << " not found\n";
     }
 }
 
-void CRTSceneLoader::debugPrintNormals(const Scene& scene)
+void CRTSceneIO::debugPrintNormals(const Scene& scene)
 {
     std::cout << "Vertex Normals:\n";
     for (size_t i = 0; i < scene.vertexNormals.size(); ++i) {
@@ -331,14 +330,14 @@ void CRTSceneLoader::debugPrintNormals(const Scene& scene)
 
 
 template <typename T>
-void CRTSceneLoader::assignIfExists(const json& j, std::string key, T& out) {
+void CRTSceneIO::assignIfExists(const json& j, std::string key, T& out) {
     if (j.contains(key)) {
         out = j.at(key).get<T>();
     }
 }
 
 template <>
-void CRTSceneLoader::assignIfExists<Vec3>(const json& j, std::string key, Vec3& out) {
+void CRTSceneIO::assignIfExists<Vec3>(const json& j, std::string key, Vec3& out) {
     if (j.contains(key)) {
         out = Vec3FromJson(j.at(key));
     }

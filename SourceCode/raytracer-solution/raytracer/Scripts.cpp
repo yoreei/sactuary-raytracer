@@ -7,6 +7,15 @@ static float fps;
 static float duration;
 static float endFrame;
 void Scripts::onSceneLoaded(Scene& scene) {
+    scene;
+ //   fps = 30.f;
+ //   GFrameNumber = 6 * uint64_t(fps);
+ //   duration = 7;
+ //   endFrame = 6 * fps;
+	//GEndFrame = uint64_t(endFrame);
+}
+
+void projectOnSceneLoaded(Scene& scene) {
     if (scene.sceneName == "day" ||
         scene.sceneName == "day2" ||
         scene.sceneName == "night" ||
@@ -23,6 +32,26 @@ void Scripts::onSceneLoaded(Scene& scene) {
 }
 
 void Scripts::onTick(Scene& scene) {
+    scene;
+        //float startAngle = PI / 4.f; // (radians)
+        //float endAngle = 5 * PI / 4.f; // (radians)
+        //float startRadius = 16.0f; // Radius of the circle
+        //float endRadius = 7.f;
+        //float startCamHeight = 5.f;
+        //float endCamHeight = -4.f;
+
+        //float t = GFrameNumber / endFrame; // Normalized time [0, 1]
+
+        //float angle = startAngle * (1.f - t) + endAngle * t;
+        //float radius = startRadius * (1.f - t) + endRadius * t;
+        //float camHeight = startCamHeight * (1.f - t) + endCamHeight * t;
+
+        //Vec3 position = { radius * std::cos(angle), camHeight, radius * std::sin(angle) };
+
+        //scene.camera.pos = position;
+        //scene.camera.lookAt({ 0.f, 0.f, 0.f });
+}
+void projectOnTick(Scene& scene) {
     if (scene.sceneName == "day") {
 
         // Parameters for the circular path
