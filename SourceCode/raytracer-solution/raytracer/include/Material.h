@@ -1,6 +1,8 @@
 #pragma once
 #include "include/CRTTypes.h"
 
+#include "json_fwd.h"
+
 class TraceHit;
 class Scene;
 class Material
@@ -13,6 +15,7 @@ public:
         CONSTANT,
         REFLECTIVE,
         REFRACTIVE,
+        DEBUG,
         DEBUG_NORMAL,
         DEBUG_UV,
         DEBUG_BARY
@@ -24,6 +27,7 @@ public:
     Type type = Type::DIFFUSE;
 
     // reflectivity + transparency + diffuseness = 1.f
+    Vec3 albedo{ 0.f, 1.f, 0.f };
     float reflectivity = 0.f;
     float transparency = 0.f;
     float diffuseness = 0.f;
@@ -45,10 +49,13 @@ public:
 
     void setAlbedo(const Vec3& _albedo) { this->albedo = _albedo; }
 private:
-    Vec3 albedo{ 0.f, 1.f, 0.f };
 };
 
 inline std::ostream& operator<<(std::ostream& os, const Material& material) {
     os << material.toString();
     return os;
 }
+
+void to_json(nlohmann::json& j, const Material& material);
+void from_json(const nlohmann::json& j, Material& material);
+

@@ -3,6 +3,7 @@
 
 #include "include/CRTTypes.h"
 
+class TraceHit;
 class Ray;
 class AABB {
 public:
@@ -13,6 +14,7 @@ public:
     /* @brief Create an AABB that encloses all AABBs in the list */
     static AABB MakeEnclosingAABB(std::vector<AABB> aabbs);
 
+    void intersect(const Ray& r, TraceHit& out) const;
     /* @brief Check if this AABB has an intersection with another AABB */
     bool hasIntersection(const AABB& other) const;
 

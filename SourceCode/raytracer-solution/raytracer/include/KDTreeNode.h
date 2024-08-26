@@ -14,19 +14,18 @@ class Ray;
 class KDTreeNode
 {
     using ordered_json = nlohmann::ordered_json;
+    using json = nlohmann::json;
 public:
     KDTreeNode() = default;
     KDTreeNode(const AABB& aabb, size_t childId) : aabb(aabb), childId(childId) {}
-    KDTreeNode(const KDTreeNode&) = delete;
-    KDTreeNode& operator=(const KDTreeNode&) = delete;
     KDTreeNode(KDTreeNode&&) = default;
     KDTreeNode& operator=(KDTreeNode&&) = default;
     ~KDTreeNode() = default;
 
-    void build(std::vector<size_t>&& triangleRefs, const std::vector<AABB>& triangleAABBs, size_t maxTrianglesPerLeaf, size_t maxDepth, size_t depth = 0);
+    void build(std::vector<size_t>&& triangleRefs, const std::vector<AABB>& cacheTriangleAABBs, size_t maxTrianglesPerLeaf, size_t maxDepth, size_t depth = 0);
     /* @brief intersect the KDTree with a ray. Write output to `out` */
     void traverse(const Scene& scene, const Ray& ray, TraceHit& out) const;
-    ordered_json toJson() const;
+    json toJson() const;
     std::string toString() const;
 
     std::array<std::unique_ptr<KDTreeNode>, 2> child {nullptr, nullptr};

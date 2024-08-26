@@ -50,6 +50,7 @@ public:
     void render();
 private:
 
+    size_t getNumBuckets() const;
     /* starts multithreading */
     void launchBuckets();
 
@@ -93,6 +94,8 @@ private:
     Color shadePosition(const TraceHit& hit) const;
 
     Color shadePerlin(Vec3 p) const;
+
+    void shadeDebug(TraceTask& task, const TraceHit& hit, TraceQueue& traceQueue);
 
     void shadeBary(const TraceTask& task, const TraceHit& hit);
 

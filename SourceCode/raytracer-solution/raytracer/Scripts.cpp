@@ -8,11 +8,12 @@ static float duration;
 static float endFrame;
 void Scripts::onSceneLoaded(Scene& scene) {
     scene;
- //   fps = 30.f;
- //   GFrameNumber = 6 * uint64_t(fps);
- //   duration = 7;
- //   endFrame = 6 * fps;
-	//GEndFrame = uint64_t(endFrame);
+    fps = 30.f;
+    //GFrameNumber = 6 * uint64_t(fps);
+    GFrameNumber = 0;
+    duration = 7;
+    endFrame = 6 * fps;
+	GEndFrame = uint64_t(endFrame);
 }
 
 void projectOnSceneLoaded(Scene& scene) {
@@ -33,23 +34,24 @@ void projectOnSceneLoaded(Scene& scene) {
 
 void Scripts::onTick(Scene& scene) {
     scene;
-        //float startAngle = PI / 4.f; // (radians)
-        //float endAngle = 5 * PI / 4.f; // (radians)
+        float startAngle = PI / 4.f; // (radians)
+        float endAngle = 5 * PI / 4.f; // (radians)
         //float startRadius = 16.0f; // Radius of the circle
-        //float endRadius = 7.f;
-        //float startCamHeight = 5.f;
-        //float endCamHeight = -4.f;
+        float startRadius = 26.0f; // Radius of the circle
+        float endRadius = 7.f;
+        float startCamHeight = 5.f;
+        float endCamHeight = -4.f;
 
-        //float t = GFrameNumber / endFrame; // Normalized time [0, 1]
+        float t = GFrameNumber / endFrame; // Normalized time [0, 1]
 
-        //float angle = startAngle * (1.f - t) + endAngle * t;
-        //float radius = startRadius * (1.f - t) + endRadius * t;
-        //float camHeight = startCamHeight * (1.f - t) + endCamHeight * t;
+        float angle = startAngle * (1.f - t) + endAngle * t;
+        float radius = startRadius * (1.f - t) + endRadius * t;
+        float camHeight = startCamHeight * (1.f - t) + endCamHeight * t;
 
-        //Vec3 position = { radius * std::cos(angle), camHeight, radius * std::sin(angle) };
+        Vec3 position = { radius * std::cos(angle), camHeight, radius * std::sin(angle) };
 
-        //scene.camera.pos = position;
-        //scene.camera.lookAt({ 0.f, 0.f, 0.f });
+        scene.camera.pos = position;
+        scene.camera.lookAt({ 0.f, 0.f, 0.f });
 }
 void projectOnTick(Scene& scene) {
     if (scene.sceneName == "day") {

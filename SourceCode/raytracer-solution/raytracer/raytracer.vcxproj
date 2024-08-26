@@ -212,6 +212,7 @@
     <ClCompile Include="Image.cpp" />
     <ClCompile Include="Metrics.cpp" />
     <ClCompile Include="Renderer.cpp" />
+    <ClCompile Include="SanctScene.cpp" />
     <ClCompile Include="Scripts.cpp" />
     <ClCompile Include="RendererOutput.cpp" />
     <ClCompile Include="KDTreeNode.cpp" />
@@ -233,6 +234,7 @@
     <ClInclude Include="..\third-party\perlin-noise.h" />
     <ClInclude Include="..\third-party\stb_image.h" />
     <ClInclude Include="..\third-party\stb_image_write.h" />
+    <ClInclude Include="Filesystem.h" />
     <ClInclude Include="include\AABB.h" />
     <ClInclude Include="include\AnimationComponent.h" />
     <ClInclude Include="include\Camera.h" />
@@ -242,12 +244,14 @@
     <ClInclude Include="include\Engine.h" />
     <ClInclude Include="include\Globals.h" />
     <ClInclude Include="include\Image.h" />
+    <ClInclude Include="include\Index.h" />
     <ClInclude Include="include\KDTreeNode.h" />
     <ClInclude Include="include\Light.h" />
     <ClInclude Include="include\Material.h" />
     <ClInclude Include="include\MeshObject.h" />
     <ClInclude Include="include\Metrics.h" />
     <ClInclude Include="include\Renderer.h" />
+    <ClInclude Include="include\SanctScene.h" />
     <ClInclude Include="include\Scene.h" />
     <ClInclude Include="include\SceneObject.h" />
     <ClInclude Include="include\Scripts.h" />

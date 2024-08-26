@@ -5,6 +5,7 @@
 #include <string>
 #include <sstream>
 
+#include "include/TraceHit.h"
 #include "include/Triangle.h"
 #include "include/Scene.h"
 #include "include/Metrics.h"
@@ -72,6 +73,53 @@ bool AABB::hasIntersection(const Ray& r) const {
 
     return true;
 }
+
+void AABB::intersect(const Ray& r, TraceHit& out) const
+{
+#ifndef NDEBUG
+    if (r.getDirection().x != 0.f) assertFEqual(r.invdir.x, 1 / r.getDirection().x);
+    if (r.getDirection().y != 0.f) assertFEqual(r.invdir.y, 1 / r.getDirection().y);
+    if (r.getDirection().z != 0.f) assertFEqual(r.invdir.z, 1 / r.getDirection().z);
+#endif
+
+	out.type = TraceHitType::OUT_OF_BOUNDS;
+    float tmin, tmax, tymin, tymax, tzmin, tzmax;
+
+    tmin = (bounds[r.sign[0]].x - r.origin.x) * r.invdir.x;
+    tmax = (bounds[1 - r.sign[0]].x - r.origin.x) * r.invdir.x;
+    tymin = (bounds[r.sign[1]].y - r.origin.y) * r.invdir.y;
+    tymax = (bounds[1 - r.sign[1]].y - r.origin.y) * r.invdir.y;
+
+    if ((tmin > tymax) || (tymin > tmax))
+        return;
+
+    if (tymin > tmin)
+        tmin = tymin;
+    if (tymax < tmax)
+        tmax = tymax;
+
+    tzmin = (bounds[r.sign[2]].z - r.origin.z) * r.invdir.z;
+    tzmax = (bounds[1 - r.sign[2]].z - r.origin.z) * r.invdir.z;
+
+
+    if ((tmin > tzmax) || (tzmin > tmax))
+        return;
+
+    if (tzmin > tmin)
+        tmin = tzmin;
+    if (tzmax < tmax)
+        tmax = tzmax;
+
+    if (tmin >= 0) {
+        out.t = tmin;
+        out.type = TraceHitType::SUCCESS;
+    }
+    else if (tmax >= 0) {
+        out.t = tmax;
+        out.type = TraceHitType::SUCCESS;
+    }
+}
+
 
 float AABB::distanceToAxis(size_t axis, const Vec3& point) const
 {

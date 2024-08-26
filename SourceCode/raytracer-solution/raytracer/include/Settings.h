@@ -5,7 +5,8 @@
 #pragma once
 #include <string>
 #include <vector>
-#include <filesystem>
+
+#include "Filesystem.h"
 
 class ImageSettings {
 public:
@@ -46,7 +47,6 @@ public:
     bool showAabbs = false;
 
     // Resolution settings
-    bool overrideResolution = false;
     size_t resolutionX = 300;
     size_t resolutionY = 200;
 
@@ -70,9 +70,12 @@ public:
     size_t debugPixelIdx(size_t imageWidth) const;
     std::string projectPath() const;
     std::string iterationName() const;
-    std::string iterationPathNoExt() const;
-    std::string framePathNoExt(const std::string& sceneName, size_t frameNumber) const;
+    std::string iterationPath() const;
+    std::filesystem::path getFramePath(const std::string& sceneName, size_t frameNumber) const;
+    Path getLogPath(const std::string& sceneName, size_t frameNumber) const;
     bool loadEntireProject() const;
     std::vector<std::filesystem::path> getOutputFiles() const;
     std::filesystem::path getCompareFile(std::filesystem::path file) const;
+    Path getDiffFile(std::filesystem::path file) const;
+    Path getSceneOutput() const;
 };

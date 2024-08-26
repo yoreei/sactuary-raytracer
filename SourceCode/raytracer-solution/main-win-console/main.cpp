@@ -33,6 +33,10 @@ void addBenchmarkingPermutations(std::vector<Settings>& settingsList)
     }
 }
 
+void writeDiffs(std::vector<Vec2<size_t>> diff)
+{
+
+}
 
 void compare(const Settings& settings)
 {
@@ -44,17 +48,17 @@ void compare(const Settings& settings)
     for (const path& outputFile : outputFiles) {
         path compareFile = settings.getCompareFile(outputFile);
         if (fs::exists(compareFile)) {
-            std::vector<Vec2<size_t>> diffs = Engine::diffImages(outputFile, compareFile);
+            ImageDiff imgDiff = Engine::diffImages(outputFile, compareFile);
 
-			bool match = true;
+            bool match = imgDiff.diffs.size() == 0;
             std::cout << "comparing " << outputFile << " and " << compareFile << std::endl;
-			for (const auto& diff : diffs) {
-				std::cout << "found diff: " << diff << std::endl;
-				match = false;
-			}
 			if (match) {
-                std::cout << "both files match\n";
+                std::cout << "both files are identical\n";
 			}
+            else {
+                std::cout << "NO MATCH\n";
+                imgDiff.writeToFile(settings.getDiffFile(outputFile));
+            }
         }
         else {
             std::cout << outputFile << " has no corresponding compare file: " << compareFile.string() << "; skipping" << std::endl;

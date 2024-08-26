@@ -1,6 +1,8 @@
 #pragma once
 #include <string>
 
+#include "json_fwd.h"
+
 #include "include/CRTTypes.h"
 #include "include/Image.h"
 
@@ -15,6 +17,7 @@ class TraceHit;
 class Scene;
 class Texture {
 public:
+    Texture() = default; // required for nlohmann::json deserialization
     Texture(std::string& name, TextureType type) : name(name), type(type) {}
     TextureType type = TextureType::SOLID_COLOR;
     std::string name = "defaultTexture";
@@ -25,6 +28,7 @@ public:
     Image bitmap{};
 
     static TextureType TypeFromString(const std::string& type);
+    static std::string StringFromType(const TextureType& type);
     Vec3 getAlbedo(const TraceHit& hit) const;
 
     // disable copy. Enable move:
@@ -35,3 +39,7 @@ public:
     Texture& operator=(const Texture&) = delete;
 
 };
+
+void to_json(nlohmann::json& j, const Texture& tex);
+void from_json(const nlohmann::json& j, Texture& tex);
+

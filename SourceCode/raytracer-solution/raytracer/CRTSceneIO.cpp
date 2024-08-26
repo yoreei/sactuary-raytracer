@@ -1,8 +1,9 @@
 #pragma warning( disable : 4365 )
 
 #include <fstream>
-
+#include <limits>
 #include <memory>
+
 #include "json.hpp"
 
 #include "include/CRTSceneIO.h"
@@ -12,11 +13,22 @@
 #include "include/Texture.h"
 #include "include/Settings.h"
 #include "include/Utils.h"
-#include "include/RendererOutput.h"
 
 using json = nlohmann::json;
 
-void CRTSceneIO::loadCrtscene(const Settings& settings, const std::filesystem::path& filePath, Scene& scene, RendererOutput& rendererOutput)
+void CRTSceneIO::write(const Settings& settings, const Scene& scene)
+{
+    Path path = settings.getSceneOutput() / scene.sceneName;
+
+    std::string pathStr = path.string();
+    std::cout << "Writing Scene: " << pathStr << std::endl;
+    std::ofstream file(pathStr);
+    if (!file) { throw std::runtime_error("Failed to load CRTScene file: " + pathStr); }
+
+    throw std::runtime_error("not implemented");
+}
+
+void CRTSceneIO::load(const Settings& settings, const std::filesystem::path& filePath, Scene& scene)
 {
     // Create a clean scene:
     std::string sceneName = filePath.filename().string();
@@ -32,7 +44,7 @@ void CRTSceneIO::loadCrtscene(const Settings& settings, const std::filesystem::p
     std::cout << "Loading Scene: " << filePathStr << std::endl;
 
     parseSettings(j, scene, settings);
-    parseImageSettings(j, scene, rendererOutput, settings);
+    parseImageSettings(j, scene, settings);
     parseCameraSettings(j, scene);
 
     std::map<std::string, size_t> idxFromTextureName;
@@ -96,30 +108,16 @@ void CRTSceneIO::parseSettings(const json& j, Scene& scene, const Settings& sett
     else { scene.ambientLightColor = scene.bgColor; }
 }
 
-void CRTSceneIO::parseImageSettings(const json& j, Scene& scene, RendererOutput& rendererOutput, const Settings& settings)
+void CRTSceneIO::parseImageSettings(const json& j, Scene& scene, const Settings& settings)
 {
     const auto& jImgSettings = j.at("settings").at("image_settings");
-
-	size_t width = jImgSettings.at("width").get<size_t>();
-	size_t height = jImgSettings.at("height").get<size_t>();
-
-	rendererOutput.endX = width;
-	rendererOutput.endY = height;
-	rendererOutput.width = width;
-	rendererOutput.height = height;
-    if (settings.overrideResolution) {
-        rendererOutput.endX = settings.resolutionX;
-		rendererOutput.endY = settings.resolutionY;
-        rendererOutput.width = settings.resolutionX;
-        rendererOutput.height = settings.resolutionY;
-    }
 
     if (jImgSettings.contains("bucket_size")) {
         scene.bucketSize = jImgSettings.at("bucket_size").get<size_t>();
     }
 
     if (settings.forceSingleThreaded || settings.debugPixel) {
-        scene.bucketSize = rendererOutput.width * rendererOutput.height;
+        scene.bucketSize = std::numeric_limits<size_t>::max();
     }
 
 }
@@ -129,12 +127,20 @@ void CRTSceneIO::parseCameraSettings(const json& j, Scene& scene) {
     const auto& jCamPos = jCam.at("position");
     Vec3 camPos{ jCamPos.at(0), jCamPos.at(1), jCamPos.at(2) };
 
-    const auto& jRotateMat = jCam.at("matrix");
-    Matrix3x3 rotateMat{ jRotateMat.get<std::vector<float>>() };
-    // NB: CRTScene format gives us the inverse direction of the camera.
-    Matrix3x3 camMat = Camera::DefaultMatrix * rotateMat;
+    if (jCam.contains("matrix")) {
+        const auto& jRotateMat = jCam.at("matrix");
+        Matrix3x3 rotateMat{ jRotateMat.get<std::vector<float>>() };
+        // NB: CRTScene format gives us the inverse direction of the camera.
+        Matrix3x3 camMat = Camera::DefaultMatrix * rotateMat;
+        scene.camera = Camera{ 90.f, camPos, camMat };
+    }
+    else if (jCam.contains("dir")) {
+        Vec3 dir = Vec3FromJson(jCam.at("dir"));
 
-    scene.camera = Camera{ 90.f, camPos, camMat };
+        scene.camera = Camera{ 90.f, camPos, Camera::DefaultMatrix };
+        scene.camera.setDir(dir);
+    }
+    else { throw std::runtime_error("camera requires either matrix or dir"); }
 }
 
 void CRTSceneIO::parseTextures(const json& j, Scene& scene, const Settings& settings, std::map<std::string, size_t>& idxFromTextureName)
@@ -220,7 +226,6 @@ void CRTSceneIO::parseObjects(const json& j, Scene& scene) {
         std::vector<Vec3> vertices;
         std::vector<Triangle> triangles;
         std::vector<Vec3> uvs;
-        std::vector<Vec3> vertexNormals;
 
         parseVertices(jObj, vertices);
 
@@ -228,40 +233,12 @@ void CRTSceneIO::parseObjects(const json& j, Scene& scene) {
         if (scene.materials.size() <= materialIdx) {
             throw std::runtime_error("Error loading object: material index out of bounds");
         }
-        parseTriangles(jObj, vertices, materialIdx, triangles);
+        parseTriangles(jObj, materialIdx, triangles);
 
         parseUvs(jObj, vertices.size(), uvs);
-        calculateVertexNormals(vertices, triangles, vertexNormals);
 
         assert(triangles.size() > 0);
-        scene.addObject(vertices, triangles, vertexNormals, uvs);
-    }
-}
-
-void CRTSceneIO::calculateVertexNormals(const std::vector<Vec3>& vertices, const std::vector<Triangle>& triangles, std::vector<Vec3>& vertexNormals) {
-    // Vec3{0.f, 0.f, 0.f} is important for summation
-    vertexNormals.resize(vertices.size(), Vec3{ 0.f, 0.f, 0.f });
-    for (size_t i = 0; i < vertices.size(); ++i) {
-        std::vector<size_t> attachedTriangles {};
-        genAttachedTriangles(i, triangles, attachedTriangles);
-        for (size_t triIndex : attachedTriangles) {
-            vertexNormals[i] += triangles[triIndex].getNormal();
-        }
-    }
-
-    for (size_t i = 0; i < vertexNormals.size(); ++i) {
-        auto& normal = vertexNormals[i];
-        normal.normalize();
-    }
-
-}
-
-void CRTSceneIO::genAttachedTriangles(const size_t vertexIndex, const std::vector<Triangle>& triangles, std::vector<size_t>& attachedTriangles) {
-    for (size_t i = 0; i < triangles.size(); ++i) {
-        const Triangle& tri = triangles[i];
-        if (tri.hasVertex(vertexIndex)) {
-            attachedTriangles.push_back(i);
-        }
+        scene.addObject(vertices, triangles, uvs);
     }
 }
 
@@ -299,11 +276,11 @@ void CRTSceneIO::parseUvs(const json& jObj, const size_t expectedSize, std::vect
     assert(uvs.size() == expectedSize);
 }
 
-void CRTSceneIO::parseTriangles(const json& jObj, const std::vector<Vec3>& vertices, const size_t materialIdx, std::vector<Triangle>& triangles) {
+void CRTSceneIO::parseTriangles(const json& jObj, const size_t materialIdx, std::vector<Triangle>& triangles) {
 
     const auto& jTriangles = jObj.at("triangles");
     for (size_t i = 0; i < jTriangles.size(); i += 3) {
-        triangles.emplace_back(vertices, jTriangles[i], jTriangles[i + 1], jTriangles[i + 2], materialIdx);
+        triangles.emplace_back(jTriangles[i], jTriangles[i + 1], jTriangles[i + 2], materialIdx);
     }
 }
 
@@ -316,8 +293,8 @@ void CRTSceneIO::warnIfMissing(const json& j, const std::string& key) {
 void CRTSceneIO::debugPrintNormals(const Scene& scene)
 {
     std::cout << "Vertex Normals:\n";
-    for (size_t i = 0; i < scene.vertexNormals.size(); ++i) {
-        const auto& vertNormal = scene.vertexNormals[i];
+    for (size_t i = 0; i < scene.cacheVertexNormals.size(); ++i) {
+        const auto& vertNormal = scene.cacheVertexNormals[i];
         std::cout << i << ": " << vertNormal << '\n';
     }
 

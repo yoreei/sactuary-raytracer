@@ -24,7 +24,6 @@ Settings Settings::load(const std::string& filename) {
     settings.debugLight = json.at("debugLight");
     settings.debugAccelStructure = json.at("debugAccelStructure");
     settings.showAabbs = json.at("showAabbs");
-    settings.overrideResolution = json.at("overrideResolution");
     settings.resolutionX = json.at("resolutionX");
     settings.resolutionY = json.at("resolutionY");
     settings.bWritePng = json.at("bWritePng");
@@ -55,7 +54,6 @@ std::string Settings::toString() const {
     json["debugLight"] = debugLight;
     json["debugAccelStructure"] = debugAccelStructure;
     json["showAabbs"] = showAabbs;
-    json["overrideResolution"] = overrideResolution;
     json["resolutionX"] = resolutionX;
     json["resolutionY"] = resolutionY;
     json["bWritePng"] = bWritePng;
@@ -123,21 +121,42 @@ std::filesystem::path Settings::getCompareFile(std::filesystem::path file) const
     return compareFilePath;
 }
 
-std::string Settings::iterationPathNoExt() const {
+std::string Settings::iterationPath() const {
     return outputDir + "/" + iterationName();
 }
-std::string Settings::framePathNoExt(const std::string& sceneName, size_t frameNumber) const {
-    return outputDir + "/" + iterationName() + "/" + projectDir + "/" + sceneName + "/" + std::to_string(frameNumber);
+std::filesystem::path Settings::getFramePath(const std::string& sceneName, size_t frameNumber) const
+{
+    std::string ext = "";
+    if (bWritePng) ext = "png";
+    else { ext = "bmp"; }
+
+    return outputDir + "/" + iterationName() + "/" + projectDir + "/" + sceneName + "/" + std::to_string(frameNumber) + "." + ext;
 }
+
+Path Settings::getLogPath(const std::string& sceneName, size_t frameNumber) const
+{
+    return outputDir + "/" + iterationName() + "/" + projectDir + "/" + sceneName + "/" + std::to_string(frameNumber) + ".log";
+}
+
 
 size_t Settings::debugPixelIdx(size_t imageWidth) const {
     return debugPixelY * imageWidth + debugPixelX;
 }
 
 void Settings::checkSettings() const {
-    if (debugPixel && overrideResolution) {
+    if (debugPixel) {
         if (debugPixelX > resolutionX || debugPixelY > resolutionY) {
             throw std::runtime_error("no such pixel to debug");
         }
     }
+}
+
+Path Settings::getDiffFile(std::filesystem::path file) const
+{
+    return Filesystem::addSubExt(file, "diff");
+}
+
+Path Settings::getSceneOutput() const
+{
+    return Path(sceneLibraryDir) / "outputScenes";
 }

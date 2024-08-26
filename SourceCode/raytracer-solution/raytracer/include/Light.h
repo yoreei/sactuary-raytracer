@@ -2,6 +2,8 @@
 #include <algorithm>
 #include <numbers>
 
+#include "json_fwd.h"
+
 #include "include/CRTTypes.h"
 #include "include/SceneObject.h"
 
@@ -28,6 +30,7 @@ public:
         return Light(LightType::POINT, position, intensity, color);
     }
     static LightType lightTypeFromString(const std::string& str);
+    static std::string stringFromLightType(const LightType lightType);
     /* Output:vector representing RGB contribution of the light source */
     Vec3 lightContrib(const Scene& scene, const Vec3& point, const Vec3& normal) const;
 
@@ -40,3 +43,7 @@ private:
     Light(LightType type, const Vec3& pos, float intensity, const Vec3& color)
         :type(type), SceneObject(pos, Matrix3x3()), intensity(intensity), color(color) {}
 };
+
+void to_json(nlohmann::json& j, const Light& light);
+void from_json(const nlohmann::json& j, Light& light);
+

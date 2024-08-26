@@ -1,9 +1,9 @@
 {
     "sceneLibraryDir": "sceneLibrary",
-    "projectDir": "hw11_refract",
-    "targetScenes": [],
+    "projectDir": "debug_kdtree",
+    "targetScenes": ["dragondebug.crtscene"],
     "outputDir": "out",
-    "pruneInvisible": true,
+    "pruneInvisible": false,
     
     "maxDepth": 6,
     "bias": 0.001,
@@ -18,7 +18,6 @@
 
     "showAabbs": false,
     
-    "overrideResolution": true,
     "resolutionX": 300,
     "resolutionY": 200,
     
@@ -28,5 +27,5 @@
     "forceNoAccelStructure": false,
     "forceSingleThreaded": false,
     "maxTrianglesPerLeaf": 4,
-    "accelTreeMaxDepth": 5
+    "accelTreeMaxDepth": 1
 }

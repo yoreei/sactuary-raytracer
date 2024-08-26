@@ -1,11 +1,13 @@
 #pragma once
 
 #include<memory>
+#include<filesystem>
 
 #include "stb_image_write.h"
 
 #include "include/CRTTypes.h"
 
+class ImageDiff;
 class Image {
 public:
     Image() : Image(0, 0) {}
@@ -35,7 +37,7 @@ public:
         else return data[y * width + x];
     }
 
-    std::vector<Vec2<size_t>> diff(const Image& other) const;
+    ImageDiff diff(const Image& other) const;
 
     Image(Image&&) = default;
     Image& operator=(Image&&) = default;
@@ -49,12 +51,29 @@ public:
     std::string toPpmString();
 
     /* @brief Write image to filesystem */
-    void writeImage(std::string filename, bool writePng, bool writeBmp) const;
+    void writeToFile(std::filesystem::path filename) const;
 
 private:
     size_t width;
     size_t height;
 
     Vec2<size_t> linearToXY(size_t linearIdx) const;
+};
+
+class ImageDiff {
+public:
+    ImageDiff(size_t width, size_t height) : width(width), height(height) {}
+    size_t width = 0;
+    size_t height = 0;
+    std::vector<Vec2<size_t>> diffs{};
+
+    void writeToFile(std::filesystem::path filename) const;
+
+    // Disable copy to prevent accidental expensive copies
+    ImageDiff(const ImageDiff&) = delete;
+    ImageDiff& operator=(const ImageDiff&) = delete;
+
+    ImageDiff(ImageDiff&&) = default;
+    ImageDiff& operator=(ImageDiff&&) = default;
 };
 

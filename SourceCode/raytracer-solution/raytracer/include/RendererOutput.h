@@ -26,11 +26,13 @@ class Settings;
 class RendererOutput
 {
 public:
-    RendererOutput(size_t width, size_t height, const Settings& settings);
+    RendererOutput(const Settings& settings);
     void init();
 
     Image getFlatImage() const;
     std::vector<Image> getDepthImages() const;
+    std::vector<size_t> getVisibleTriangleIds(size_t maxTriangles) const;
+    Color flattenPixel(size_t x, size_t y) const;
 
     void addSample(const TraceTask& task, const Vec3 color, const TraceHit& hit, BlendType blendType = BlendType::NORMAL);
 

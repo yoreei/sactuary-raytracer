@@ -33,6 +33,8 @@ public:
     float v = 0.f;    // Texture V coordinate
     size_t materialIndex = 0; // see Scene::materials
     TraceHitType type = TraceHitType::OUT_OF_BOUNDS;
+    size_t triRef = 0;
+    size_t kdtreeIdx = 0;
     bool successful() const { return type == TraceHitType::SUCCESS || type == TraceHitType::INSIDE_REFRACTIVE; }
     /* @brief Get point of intersection adjusted for bias */
     Vec3 biasP(float bias) const { return p + n * bias; }

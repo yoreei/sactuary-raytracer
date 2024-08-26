@@ -25,6 +25,6 @@ void resetScene(Scene& scene)
     scene.triangles.clear();
     scene.materials.clear();
     scene.meshObjects.clear();
-    scene.vertexNormals.clear();
+    scene.cacheVertexNormals.clear();
     scene.lights.clear();
 }

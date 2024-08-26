@@ -1,5 +1,7 @@
 #pragma warning( disable : 4365 )
 
+#include "json.hpp"
+
 #include "include/Material.h"
 #include "include/Scene.h"
 
@@ -25,7 +27,11 @@ Material::Type Material::TypeFromString(const std::string& type)
     {
         return Type::REFRACTIVE;
     }
-    else if (type == "debug_normal")
+    else if (type == "debug")
+    {
+        return Type::DEBUG;
+    }
+    else if (type == "debug")
     {
         return Type::DEBUG_NORMAL;
     }
@@ -60,6 +66,10 @@ std::string Material::StringFromType(const Material::Type& type)
     else if (type == Type::REFRACTIVE)
     {
         return "refractive";
+    }
+    else if (type == Type::DEBUG)
+    {
+        return "debug";
     }
     else if (type == Type::DEBUG_NORMAL)
     {
@@ -100,3 +110,33 @@ Vec3 Material::getAlbedo(const Scene& scene, const TraceHit& hit) const
     }
 }
 
+void to_json(nlohmann::json& j, const Material& material)
+{
+    j = nlohmann::json{
+        { "albedo", material.albedo },
+        { "type", Material::StringFromType(material.type) },
+        { "reflectivity", material.reflectivity },
+        { "transparency", material.transparency },
+        { "diffuseness", material.diffuseness },
+        { "ior", material.ior },
+        { "textureIdx", material.textureIdx },
+        { "occludes", material.occludes },
+        { "hasTexture", material.hasTexture },
+        { "smoothShading", material.smoothShading } };
+}
+
+void from_json(const nlohmann::json& j, Material& material)
+{
+    material.albedo = j.at("albedo");
+    std::string type_str;
+    j.at("type").get_to(type_str);
+    material.type = Material::TypeFromString(type_str);
+    material.reflectivity = j.at("reflectivity");
+    material.transparency = j.at("transparency");
+    material.diffuseness = j.at("diffuseness");
+    material.ior = j.at("ior");
+    material.textureIdx = j.at("textureIdx");
+    material.occludes = j.at("occludes");
+    material.hasTexture = j.at("hasTexture");
+    material.smoothShading = j.at("smoothShading");
+}

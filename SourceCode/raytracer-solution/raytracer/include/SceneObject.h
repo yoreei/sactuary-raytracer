@@ -25,6 +25,10 @@ public:
         throw std::runtime_error("SceneObject::translateTo not implemented");
     }
 
+    // TODO reomove toJson and leave to_json
     nlohmann::ordered_json toJson() const;
     inline const static Matrix3x3 DefaultMatrix = { {1.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f, 0.f, -1.f } };
 };
+
+void to_json(nlohmann::json& j, const SceneObject& sceneObj);
+void from_json(const nlohmann::json& j, SceneObject& sceneObj);

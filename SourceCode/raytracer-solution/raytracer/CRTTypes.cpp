@@ -150,6 +150,18 @@ void assertFEqual(float a, float b, float atol) {
 #endif
 }
 
+void to_json(nlohmann::json& j, const Vec3& v)
+{
+    j = nlohmann::json{ { "x", v.x },{ "y", v.y },{ "z", v.z } };
+}
+
+void from_json(const nlohmann::json& j, Vec3& v)
+{
+    j["x"].get_to(v.x);
+    j["y"].get_to(v.y);
+    j["z"].get_to(v.z);
+}
+
 Vec3 slerp(const Vec3& vec0Ref, const Vec3& vec1, float t) {
     assert(vec0Ref.isUnit());
     assert(vec1.isUnit());
@@ -180,6 +192,28 @@ Vec3 slerp(const Vec3& vec0Ref, const Vec3& vec1, float t) {
     Vec3 result = vec0 * factor0 + vec1 * factor1;
     assert(result.isUnit());
     return result;
+}
+
+void to_json(nlohmann::json& j, const Matrix3x3& mat)
+{
+    j = nlohmann::json(mat.data);
+}
+
+void from_json(const nlohmann::json& j, Matrix3x3& mat)
+{
+    j.get_to(mat.data);
+}
+
+void to_json(nlohmann::json& j, const Color& color)
+{
+    j = nlohmann::json{ { "r", color.r },{ "g", color.g },{ "b", color.b } };
+}
+
+void from_json(const nlohmann::json& j, Color& color)
+{
+    j["r"].get_to(color.r);
+    j["g"].get_to(color.g);
+    j["b"].get_to(color.b);
 }
 
 Color Color::fromUnit(float fr, float fg, float fb) {

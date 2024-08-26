@@ -1,19 +1,19 @@
 #pragma warning( disable : 4365 )
 
+#include "json.hpp"
+
 #include "include/Triangle.h"
 #include "include/Scene.h"
 
-Triangle::Triangle(const std::vector<Vec3>& vertices, size_t v0, size_t v1, size_t v2, size_t _materialIndex)
+Triangle::Triangle(size_t v0, size_t v1, size_t v2, size_t _materialIndex)
 {
     v[0] = v0;
     v[1] = v1;
     v[2] = v2;
     materialIndex = _materialIndex;
-    normal = calculateNormal(vertices);
 }
 
-Vec3 Triangle::calculateNormal(const std::vector<Vec3>& vertices) const {
-    Vec3 out{};
+void Triangle::buildNormal(const std::vector<Vec3>& vertices) {
     const Vec3& v0 = vertices[v[0]];
     const Vec3& v1 = vertices[v[1]];
     const Vec3& v2 = vertices[v[2]];
@@ -21,9 +21,8 @@ Vec3 Triangle::calculateNormal(const std::vector<Vec3>& vertices) const {
     Vec3 e1 = v1 - v0;
     Vec3 e2 = v2 - v0;
 
-    e1.cross(e2, out);
-    out.normalize();
-    return out;
+    e1.cross(e2, normal);
+    normal.normalize();
 }
 
 [[nodiscard]]
@@ -56,8 +55,9 @@ bool Triangle::hasVertex(size_t vertexIndex) const {
 void Triangle::intersect(const Scene& scene, const Ray& ray, size_t triRef, TraceHit& hit) const {
     assertFEqual(ray.getDirection().lengthSquared(), 1.f);
     GSceneMetrics.record("TriangleIntersection");
-    if (!scene.triangleAABBs[triRef].hasIntersection(ray)) return;
+    if (!scene.cacheTriangleAABBs[triRef].hasIntersection(ray)) return;
 
+	hit.triRef = triRef;
     float rayProj = ray.getDirection().dot(normal);
 
     if (rayProj < -1e-6) { // normal is facing ray
@@ -218,9 +218,9 @@ bool Triangle::intersect_plane(const std::vector<Vec3>& vertices, const Ray& ray
 Vec3 Triangle::hitNormal(const Scene& scene, const TraceHit& hit) const {
     Vec3 result{};
     if (scene.materials[materialIndex].smoothShading) {
-        const Vec3& v0N = scene.vertexNormals[v[0]];
-        const Vec3& v1N = scene.vertexNormals[v[1]];
-        const Vec3& v2N = scene.vertexNormals[v[2]];
+        const Vec3& v0N = scene.cacheVertexNormals[v[0]];
+        const Vec3& v1N = scene.cacheVertexNormals[v[1]];
+        const Vec3& v2N = scene.cacheVertexNormals[v[2]];
         return v0N * (1 - hit.baryU - hit.baryV) + v1N * hit.baryU + v2N * hit.baryV;
     }
     else {
@@ -257,5 +257,15 @@ void Triangle::buildAABB(const std::vector<Vec3>& vertices, Vec3* bounds) const
     max.z = std::max({ v0.z, v1.z, v2.z });
 }
 
+void to_json(nlohmann::json& j, const Triangle& triangle)
+{
+    j = nlohmann::json{
+        { "v", triangle.v },
+        { "materialIndex", triangle.materialIndex } };
+}
 
-
+void from_json(const nlohmann::json& j, Triangle& triangle)
+{
+    j.at("v").get_to(triangle.v);
+    j.at("materialIndex").get_to(triangle.materialIndex);
+}

@@ -50,10 +50,11 @@ public:
     std::vector<Material> materials {};
     std::vector<Texture> textures {};
     std::vector<Triangle> triangles {};
-    std::vector<AABB> triangleAABBs {};
     std::vector<Vec3> uvs {};
-    std::vector<Vec3> vertexNormals {};
     std::vector<Vec3> vertices {};
+
+    std::vector<AABB> cacheTriangleAABBs {};
+    std::vector<Vec3> cacheVertexNormals {};
 
     // Components
     std::unordered_map<int, AnimationComponent> lightAnimations {}; // Key: index in lights vector
@@ -69,8 +70,13 @@ public:
     MeshObject& addObject(
         std::vector<Vec3>& objVertices,
         std::vector<Triangle>& objTriangles,
-        std::vector<Vec3>& objVertexNormals,
         std::vector<Vec3>& objUvs);
+
+	void buildVertexNormals();
+
+    void buildTriangleNormals();
+
+    std::vector<size_t> genAttachedTriangles(const size_t vertexIndex) const;
 
     /* @brief: build acceleration structures. Marks scene clean. See `isDirty` */
     void build();
@@ -78,6 +84,8 @@ public:
     bool getIsDirty() const { return isDirty; }
 
     void updateAnimations();
+
+    Scene cut(const std::vector<size_t> trianglesToCut) const;
 
 private:
     KDTreeNode accelStruct{};

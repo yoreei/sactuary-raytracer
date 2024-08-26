@@ -17,11 +17,13 @@
 #include "include/Scene.h"
 #include "include/Metrics.h"
 #include "include/CRTSceneIO.h"
+#include "include/SanctScene.h"
 #include "include/Renderer.h"
 #include "include/Settings.h"
 #include "include/Scripts.h"
 #include "include/Globals.h"
 #include "include/Utils.h"
+#include "include/Index.h"
 
 namespace fs = std::filesystem;
 
@@ -29,16 +31,6 @@ void Engine::writeFile(const std::string& filename, const std::string& data) con
     std::ofstream ppmFileStream(filename, std::ios::out | std::ios::binary);
     ppmFileStream.write(data.c_str(), data.size());
     ppmFileStream.close();
-}
-
-void Engine::handleOverrideSettings()
-{
-    if (settings.debugPixel) {
-        rendererOutput.startX = settings.debugPixelX;
-        rendererOutput.startY = settings.debugPixelY;
-        rendererOutput.endX = settings.debugPixelX + 1;
-        rendererOutput.endY = settings.debugPixelY + 1;
-    }
 }
 
 void Engine::startTick()
@@ -55,16 +47,10 @@ void Engine::startTick()
         renderer.render();
         writeFrame();
         ++GFrameNumber;
-        auto summedMetrics = GSceneMetrics.toJson();
-
-        uint64_t triInt = Utils::jsonGetDefault<uint64_t>(summedMetrics["counters"], "TriangleIntersection", 0);
-        if (triInt < GBestTriangleIntersect) {
-            GBestSettings = summedMetrics.dump(4);
-        }
     }
 }
 
-std::vector<Vec2<size_t>> Engine::diffImages(std::filesystem::path path1, std::filesystem::path path2)
+ImageDiff Engine::diffImages(std::filesystem::path path1, std::filesystem::path path2)
 {
     Image img1 = Image::FromBitmap(path1.string());
     Image img2 = Image::FromBitmap(path2.string());
@@ -78,8 +64,15 @@ void Engine::loadScene(const std::filesystem::path& filePath) {
 
     GSceneMetrics.startTimer("loadScene");
 
-    CRTSceneIO::loadCrtscene(settings, filePath, scene, rendererOutput);
-    handleOverrideSettings();
+    if (filePath.extension() == ".crtscene") {
+		CRTSceneIO::load(settings, filePath, scene);
+    }
+    else if (filePath.extension() == ".sanctscene") {
+        SanctSceneIO::load(settings, filePath, scene);
+    }
+    else { throw std::runtime_error("wrong scene file extension"); }
+    Vec3 dir = scene.camera.getDir();
+    std::cout << dir;
     rendererOutput.init();
     Scripts::onSceneLoaded(scene);
     std::cout << ">> Scene " << filePath << " loaded\n";
@@ -123,35 +116,56 @@ std::vector<std::filesystem::path> Engine::getScenesToLoad() const
 }
 
 void Engine::writeFrame() const {
-    // Write Flat Image
-    Image image = rendererOutput.getFlatImage();
-    std::string framePathNoExt = settings.framePathNoExt(scene.sceneName, GFrameNumber);
-    image.writeImage(framePathNoExt, settings.bWritePng, settings.bWriteBmp);
+    if (!settings.debugPixel) {
+        // Write Flat Image
+        Image image = rendererOutput.getFlatImage();
+        std::filesystem::path framePath = settings.getFramePath(scene.sceneName, GFrameNumber);
+        image.writeToFile(framePath);
 
-    // Write Depth Images
-    std::vector<Image> depthImages = rendererOutput.getDepthImages();
-    for (size_t i = 0; i < depthImages.size(); i++) {
-        depthImages[i].writeImage(framePathNoExt + "_depth_" + std::to_string(i), settings.bWritePng, settings.bWriteBmp);
+        // Write Depth Images
+        std::vector<Image> depthImages = rendererOutput.getDepthImages();
+        for (size_t i = 0; i < depthImages.size(); i++) {
+            Path depthPath = Filesystem::addSubExt(framePath, "depth" + std::to_string(i));
+            depthImages[i].writeToFile(depthPath);
+        }
     }
 
     // Write Text Logs
-    std::ofstream fileStream(framePathNoExt + ".log", std::ios::out);
+    Path logPath = settings.getLogPath(scene.sceneName, GFrameNumber);
+    std::ofstream fileStream(logPath.string(), std::ios::out);
     std::string metricsString = GSceneMetrics.toString();
     std::stringstream stream;
 
     stream << metricsString << std::endl;
     stream << std::endl;
 
-    if (settings.debugPixel) {
-        stream << "debugPixel: " << image(settings.debugPixelX, settings.debugPixelY) << std::endl;
-    }
-
     std::string logStr = stream.str();
     std::cout << logStr;
     fileStream << logStr;
 
-    // Write Output Scene
+    // Write Pruned crtscene File (TODO)
+    std::vector<size_t> visibleTriangles;
+    if (settings.pruneInvisible) {
+        visibleTriangles = rendererOutput.getVisibleTriangleIds(scene.triangles.size());
+        Scene newScene = scene.cut(visibleTriangles);
+        SanctSceneIO::write(settings, newScene);
+    }
 
+	// Write Debug Pixel Info
+	if (settings.debugPixel) {
+		std::cout << "\n--- Debug Pixel Info ----\n";
+		std::cout << "Debug Pixel Info: visibleTriangles: " << visibleTriangles << std::endl;
+		Color pixelColor = rendererOutput.flattenPixel(settings.debugPixelX, settings.debugPixelY);
+		std::cout << "Debug Pixel Info: Final Color: " << pixelColor << std::endl;
+	}
+
+    // Write Metrics
+	auto summedMetrics = GSceneMetrics.toJson();
+
+	uint64_t triInt = Utils::jsonGetDefault<uint64_t>(summedMetrics["counters"], "TriangleIntersection", 0);
+	if (triInt < GBestTriangleIntersect) {
+		GBestSettings = summedMetrics.dump(4);
+	}
 }
 
 
